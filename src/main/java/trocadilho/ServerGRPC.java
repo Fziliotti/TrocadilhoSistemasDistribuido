@@ -2,6 +2,8 @@ package trocadilho;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import trocadilho.service.LoginServiceImpl;
+import trocadilho.service.TrocadilhoServiceImpl;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -12,7 +14,9 @@ public class ServerGRPC {
 
         try{
             Server server = ServerBuilder.forPort(8080)
-                    .addService(new TrocadilhosGameImpl()).build();
+                    .addService(new LoginServiceImpl())
+                    .addService(new TrocadilhoServiceImpl())
+                    .build();
 
             System.out.println("Starting server...");
             server.start();
@@ -29,9 +33,6 @@ public class ServerGRPC {
         server.close();
     }
 
-    public class TrocadilhosHubImpl {
-
-    }
 
     public void login(String name, String password) {
 

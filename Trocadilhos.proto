@@ -3,15 +3,18 @@ option java_multiple_files = true;
 package trocadilho;
 
 
-service Trocadilhos {
+service TrocadilhoService {
 
-    rpc login (LoginRequest) returns (APIResponse);
     rpc listTrocadilhos (GetTrocadilhoRequest) returns (APIResponse);
     rpc getTrocadilho (GetTrocadilhoRequest) returns (TrocadilhoResponse);
     rpc insertTrocadilho (TrocadilhoRequest) returns (APIResponse);
     rpc updateTrocadilho (TrocadilhoRequest) returns (APIResponse);
     rpc deleteTrocadilho (TrocadilhoRequest) returns (APIResponse);
 
+}
+
+service LoginService {
+    rpc login (LoginRequest) returns (APIResponse);
 }
 
 message TrocadilhoRequest {
