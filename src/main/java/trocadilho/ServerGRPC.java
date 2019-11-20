@@ -4,34 +4,27 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 
 public class ServerGRPC {
 
     public static void main(String[] args) throws IOException {
 
         try{
-            Server server = ServerBuilder.forPort(8080)
-                    .addService(new TrocadilhosGameImpl()).build();
+//            Server server = ServerBuilder.forPort(8080)
+//                    .addService(new TrocadilhosServiceImpl()).build();
 
             System.out.println("Starting server...");
             server.start();
 
 
-
-            log.info("Servidor iniciado na porta 12345");
-
-
         } catch (IOException ex) {
-            log.info("Erro de conexão");
+            System.out.println("Erro de conexão!");
         }
 
-        server.close();
+        System.out.println("Server started!");
+        server.awaitTermination();
     }
 
-    public class TrocadilhosHubImpl {
-
-    }
 
     public void login(String name, String password) {
 
