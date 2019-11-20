@@ -7,7 +7,7 @@ service Trocadilhos {
 
     rpc login (LoginRequest) returns (APIResponse);
     rpc listTrocadilhos (GetTrocadilhoRequest) returns (APIResponse);
-    rpc getTrocadilho (GetTrocadilhoRequest) returns (APIResponse);
+    rpc getTrocadilho (GetTrocadilhoRequest) returns (TrocadilhoResponse);
     rpc insertTrocadilho (TrocadilhoRequest) returns (APIResponse);
     rpc updateTrocadilho (TrocadilhoRequest) returns (APIResponse);
     rpc deleteTrocadilho (TrocadilhoRequest) returns (APIResponse);
@@ -25,7 +25,13 @@ message GetTrocadilhoRequest {
 
 message APIResponse {
     string code = 1;
-    string message = 2;
+    string message = 3;
+}
+
+message TrocadilhoResponse {
+    string code = 1;
+    bool underEdition = 2;
+    string message = 3;
 }
 
 message LoginRequest {
