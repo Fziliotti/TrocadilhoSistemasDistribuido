@@ -32,4 +32,8 @@ public class ServerGRPC {
     public class TrocadilhosHubImpl {
 
     }
+
+    public void login(String name, String password) {
+
+    }
 }
