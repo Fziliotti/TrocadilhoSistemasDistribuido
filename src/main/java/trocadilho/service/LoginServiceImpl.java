@@ -6,7 +6,7 @@ public class LoginServiceImpl {
 
 
 //    @Override
-//    public void login(LoginRequest loginRequest, StreamObserver<APIResponse> responseObserver) {
+//    public void login(LoginRe loginRequest, StreamObserver<APIResponse> responseObserver) {
 //
 //    }
 

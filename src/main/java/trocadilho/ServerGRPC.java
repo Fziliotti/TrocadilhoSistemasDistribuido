@@ -1,5 +1,10 @@
 package trocadilho;
 
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import trocadilho.service.TrocadilhoServiceImpl;
+import trocadilho.service.LoginServiceImpl;
+
 import java.io.IOException;
 
 public class ServerGRPC {

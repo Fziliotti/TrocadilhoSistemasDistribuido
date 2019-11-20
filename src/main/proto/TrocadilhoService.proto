@@ -4,7 +4,6 @@ package trocadilho;
 
 
 service TrocadilhoService {
-
     rpc listTrocadilhos (GetTrocadilhoRequest) returns (APIResponse);
     rpc getTrocadilho (GetTrocadilhoRequest) returns (TrocadilhoResponse);
     rpc insertTrocadilho (TrocadilhoRequest) returns (APIResponse);
