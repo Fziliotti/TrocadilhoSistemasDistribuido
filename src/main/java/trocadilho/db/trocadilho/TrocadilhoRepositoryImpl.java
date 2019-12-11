@@ -49,6 +49,14 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
     }
 
     @Override
+    public void replaceAll(TrocadilhoDBRepresentation trocadilhoDBRepresentation) throws IOException {
+
+        ObjectMapper writeMapper = new ObjectMapper();
+        writeMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        writeMapper.writeValue(new File("src/main/java/trocadilho/db/trocadilho/trocadilhoDB.json"), trocadilhoDBRepresentation);
+    }
+
+    @Override
     public void update(String code, String content) throws IOException {
         File file = new File("src/main/java/trocadilho/db/trocadilho/trocadilhoDB.json");
         FileReader fr = new FileReader(file);
@@ -122,6 +130,7 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
         if (!String.valueOf(json).equals("")) {
             trocadilhoDBRepresentation = mapper.readValue(String.valueOf(json), TrocadilhoDBRepresentation.class);
         }
+        if(trocadilhoDBRepresentation == null) return new TrocadilhoDBRepresentation().getTrocadilhoList();
         return trocadilhoDBRepresentation.getTrocadilhoList().stream().sorted(Comparator.comparing(Trocadilho::getCode)).collect(Collectors.toList());
     }
 }

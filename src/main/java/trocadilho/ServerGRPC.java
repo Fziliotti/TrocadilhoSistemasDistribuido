@@ -3,7 +3,6 @@ package trocadilho;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import trocadilho.service.TrocadilhoServiceImpl;
-import trocadilho.service.LoginServiceImpl;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -13,8 +12,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ServerGRPC {
-    public static String SERVERS_QUANTITY = "servers_quantity";
-    public static String BASE_PORT = "base_port";
+    public static String SERVERS_QUANTITY = "SERVERS_QUANTITY";
+    public static String BASE_PORT = "BASE_PORT";
+    public static String INTERVAL_TO_SNAPSHOT = "INTERVAL_TO_SNAPSHOT";
+    public static String INTERVAL_TO_DB = "INTERVAL_TO_DB";
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
@@ -80,6 +81,41 @@ public class ServerGRPC {
         return 7000;
     }
 
+    public static Integer getIntervalToSnapshot() {
+        try {
+            File file = new File("constants.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                String[] line = br.readLine().split("=");
+                if (line[0].equals(INTERVAL_TO_SNAPSHOT))
+                    return Integer.parseInt(line[1]);
+            }
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return 7000;
+    }
+
+    public static Integer getIntervalToDb() {
+        try {
+            File file = new File("constants.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                String[] line = br.readLine().split("=");
+                if (line[0].equals(INTERVAL_TO_DB))
+                    return Integer.parseInt(line[1]);
+            }
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return 7000;
+    }
+
+
     private static int getAvailablePort() {
         List<Integer> ports = getPorts();
         try {
@@ -128,7 +164,7 @@ public class ServerGRPC {
                 if (newOnlineServers.size() != onlinePorts.size()) {
                     FileWriter fw = new FileWriter(file);
                     BufferedWriter bw = new BufferedWriter(fw);
-                    StringBuilder newOnlineServersString = new StringBuilder("");
+                    StringBuilder newOnlineServersString = new StringBuilder(",.");
                     newOnlineServers.forEach(newOnlineServer -> newOnlineServersString.append(newOnlineServer).append(","));
                     newOnlineServersString.deleteCharAt(newOnlineServersString.length() - 1);
                     bw.write(newOnlineServersString.toString());

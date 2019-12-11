@@ -8,21 +8,20 @@ import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
 
-import java.io.IOException;
+import java.io.File;
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServiceImplBase implements Serializable {
     public static String GREETING_OK = "OK";
     public static String LOCALHOST = "localhost";
+    public static String SNAPSHOT = "snapshot";
+    public static String LOG = "log";
 
     private List<Trocadilho> trocadilhoList = new ArrayList<>();
     private TrocadilhoRepository trocadilhoRepository = new TrocadilhoRepositoryImpl();
+    public TrocadilhoStateServer trocadilhoStateServer = new TrocadilhoStateServer();
     private List<Integer> neighborServers;
     private Integer serverId;
     private String port;
@@ -35,10 +34,30 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         this.allServersBasePort = ServerGRPC.getBasePort();
         this.port = String.valueOf(serverId + allServersBasePort);
         this.neighborServers = doGreeting();
-
+        this.runActualServerState();
 
     }
 
+    public void runActualServerState() {
+        File snapshotDirectory = new File(SNAPSHOT);
+        File[] files = snapshotDirectory.listFiles();
+        List<File> filesList = new ArrayList<>();
+        if (files != null && files.length != 0)
+            filesList = Arrays.asList(files);
+        Optional<Integer> maxSnapshotId = filesList.stream()
+                .filter(file -> file.getName().contains("snapshot"))
+                .map(file -> file.getName().split("_")[1])
+                .map(file -> Integer.parseInt(file.split(".t")[0]))
+                .max(Comparator.naturalOrder());
+        if (maxSnapshotId.isPresent()) {
+            String snapshotFile = "snapshot/snapshot_" + maxSnapshotId.get().toString() + ".txt";
+            trocadilhoStateServer.beginStateControl(maxSnapshotId.get()+1);
+            trocadilhoStateServer.recoverDB(snapshotFile);
+        } else {
+            trocadilhoStateServer.beginStateControl(1);
+        }
+
+    }
 
     public List<Integer> doGreeting() {
         List<Integer> neighbourServers = new ArrayList<>();
@@ -46,10 +65,10 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
             if (i == serverId) continue;
 
             Integer port = i + allServersBasePort;
+            TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
 
             try {
                 GreetingRequest greetingRequest = GreetingRequest.newBuilder().setPort(this.port).build();
-                TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
                 APIResponse apiResponse = stub.doGreeting(greetingRequest);
                 if (apiResponse.getMessage().equals(GREETING_OK)) {
                     neighbourServers.add(port);
@@ -116,7 +135,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getUsername())) {
             try {
-                trocadilhoRepository.create(request.getTrocadilho(), request.getUsername());
+                trocadilhoStateServer.createTrocadilho(request.getUsername(), request.getTrocadilho());
                 message.append("OK - Created new trocadilho!");
                 System.out.println("Created trocadilho for user: " + request.getUsername());
             } catch (Exception e) {
@@ -137,7 +156,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getTrocadilho())) {
             try {
-                trocadilhoRepository.update(request.getCode(), request.getTrocadilho());
+                trocadilhoStateServer.updateTrocadilho(request.getCode(), request.getTrocadilho());
                 message.append("OK - Trocadilho updated!");
                 System.out.println("Update trocadilho for code: " + request.getCode());
             } catch (Exception e) {
@@ -157,7 +176,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getCode())) {
             try {
-                trocadilhoRepository.deleteById(request.getCode());
+                trocadilhoStateServer.deleteTrocadilho(request.getCode());
                 message.append("OK - Trocadilho deleted!");
                 System.out.println("Delete trocadilho for code: " + request.getCode());
             } catch (Exception e) {
@@ -177,15 +196,10 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getName())) {
 
-            try {
-                List<Trocadilho> base = trocadilhoRepository.listAll();
-                base.forEach(trocadilho -> {
-                    message.append("\nId: ").append(trocadilho.getCode()).append(" --Autor -> ").append(trocadilho.getUsername()).append(" --- ").append(trocadilho.getContent());
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-                message.append("Sorry! Cannot list all trocadilhos.");
-            }
+            List<Trocadilho> base = trocadilhoStateServer.getTrocadilhos();
+            base.forEach(trocadilho -> {
+                message.append("\nId: ").append(trocadilho.getCode()).append(" --Autor -> ").append(trocadilho.getUsername()).append(" --- ").append(trocadilho.getContent());
+            });
         } else {
             message.append(this.listAllFromRightServer(request));
         }
