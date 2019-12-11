@@ -45,7 +45,10 @@ Será desenvolvido um jogo de trocadilhos reunindo vários jogadores. O jogo ser
 ## Grupo 
 
 Eduardo Ferreira de Oliveira
+<br>
 Fabrício Fernandes Ziliotti
+<br>
 Guilherme Raimondi
+<br>
 Marcos Victor de Aquino Barra
 
