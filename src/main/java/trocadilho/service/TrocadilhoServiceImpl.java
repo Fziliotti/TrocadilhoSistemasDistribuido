@@ -7,6 +7,7 @@ import trocadilho.*;
 import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
+import trocadilho.server.ServerGRPC;
 
 import java.io.File;
 import java.io.Serializable;
@@ -82,7 +83,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     }
 
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub getBlockingStubByHostAndPort(String host, Integer port) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext(true).build();
         return TrocadilhoServiceGrpc.newBlockingStub(channel);
     }
 

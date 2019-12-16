@@ -1,14 +1,17 @@
-package trocadilho;
+package trocadilho.server;
 
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.netty.NettyTransport;
+import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.cluster.Member;
+import io.atomix.copycat.server.storage.Storage;
+import io.atomix.copycat.server.storage.StorageLevel;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import trocadilho.service.TrocadilhoServiceImpl;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ServerGRPC {
@@ -24,17 +27,37 @@ public class ServerGRPC {
             System.out.println("Todos os servidores já estão funcionando.");
             return;
         }
+        int myId = port - getBasePort();
+        List<Address> addresses = new LinkedList<>();
+        getPorts().forEach(port1 -> addresses.add(new Address("localhost", port1)));
 
-        Server server = ServerBuilder.forPort(port)
-                .addService(new TrocadilhoServiceImpl(port - getBasePort()))
-                .build();
+        CopycatServer.Builder builder = CopycatServer.builder(addresses.get(myId))
+                .withStateMachine(TrocadilhosStateMachine::new)
+                .withTransport(NettyTransport.builder()
+                        .withThreads(4)
+                        .build())
+                .withStorage(Storage.builder()
+                        .withDirectory(new File("logs_" + myId)) //Must be unique
+                        .withStorageLevel(StorageLevel.DISK)
+                        .build());
+        CopycatServer server = builder.build();
+        if (myId == 0) {
+            server.bootstrap().join();
 
-        System.out.println("Starting server...");
-        server.start();
-        addPortIntoOnlineServers(port);
-        System.out.println("Server started on port " + (port));
-        server.awaitTermination();
-        removePortFromOnlineServers(port);
+        } else {
+            server.join(addresses).join();
+        }
+
+//        Server grpcServer = ServerBuilder.forPort(port)
+//                .addService(new TrocadilhoServiceImpl(port - getBasePort()))
+//                .build();
+//
+//        System.out.println("Starting grpcServer...");
+//        grpcServer.start();
+//        addPortIntoOnlineServers(port);
+//        System.out.println("Server started on port " + (port));
+//        grpcServer.awaitTermination();
+//        removePortFromOnlineServers(port);
 
     }
 

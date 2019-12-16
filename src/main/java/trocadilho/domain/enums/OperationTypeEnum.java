@@ -1,4 +1,4 @@
-package trocadilho;
+package trocadilho.domain.enums;
 
 public enum OperationTypeEnum {
     CREATE("1"),

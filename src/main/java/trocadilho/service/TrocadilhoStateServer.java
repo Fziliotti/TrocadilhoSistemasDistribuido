@@ -4,16 +4,16 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Synchronized;
-import trocadilho.ServerGRPC;
 import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
 import trocadilho.domain.TrocadilhoDBRepresentation;
+import trocadilho.server.ServerGRPC;
 
 import java.io.*;
 import java.util.*;
 
-import static trocadilho.OperationTypeEnum.*;
+import static trocadilho.domain.enums.OperationTypeEnum.*;
 import static trocadilho.service.TrocadilhoServiceImpl.LOG;
 import static trocadilho.service.TrocadilhoServiceImpl.SNAPSHOT;
 
