@@ -13,9 +13,6 @@ ARG MAVEN_VERSION=3.6.3
 # 2- Define a constant with the working directory
 ARG USER_HOME_DIR="/root"
 
-# 3- Define the SHA key to validate the maven download
-# ARG SHA=b4880fb7a3d81edd190a029440cdf17f308621af68475a4fe976296e71ff4a4b546dd6d8a58aaafba334d309cc11e638c52808a4b0e818fc0fd544226d952544
-
 # 4- Define the URL where maven can be downloaded from
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
@@ -47,8 +44,3 @@ RUN mvn clean install
 RUN cp /tmp/TrocadilhoSistemasDistribuido/target/*.jar .
 RUN rm -rf servers_online.txt
 RUN touch servers_online.txt
-
-# RUN java -jar server.jar
-
-# RUN mvn exec:java -Dexec.mainClass="trocadilho.ServerGRPC"
-# RUN mvn exec:java -Dexec.mainClass="trocadilho.Client"
