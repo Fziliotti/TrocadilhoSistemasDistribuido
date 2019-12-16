@@ -1,22 +1,16 @@
 
 
-# Build the server
-mvn clean package
-
-# Execute one server
-mvn exec:java -Dexec.mainClass="trocadilho.ServerGRPC"
-
-# Execute 100 clients
-executeClients(){
-	mvn exec:java -Dexec.mainClass="trocadilho.Client"
+# Execute servers
+executeServers(){
+	mvn exec:java -Dexec.mainClass="trocadilho.ServerGRPC"
 }
 
-# 100 executions
-for i in {1..100}
+# 10 executions
+for i in {1..4}
 do
-	executeClients & # Put the function in background
+	executeServers & # Put the function in background
+	sleep 20
 done
 
 # Block the terminal until all threads finished
-wait
 echo "All done"

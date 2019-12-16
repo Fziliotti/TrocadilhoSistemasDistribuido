@@ -6,9 +6,10 @@ executeClients(){
 }
 
 # 100 executions
-for i in {1..100}
+for i in {1..15}
 do
 	executeClients & # Put the function in background
+	sleep 15
 done
 
 # Block the terminal until all threads finished
