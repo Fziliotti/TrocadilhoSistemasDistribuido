@@ -1,15 +1,14 @@
 
 
 # Build the server
-# mvn clean package
+mvn clean package
 
 # Execute one server
-cd target
-java -jar server.jar &
+mvn exec:java -Dexec.mainClass="trocadilho.ServerGRPC"
 
 # Execute 100 clients
 executeClients(){
-	java -jar client.jar < in
+	mvn exec:java -Dexec.mainClass="trocadilho.Client"
 }
 
 # 100 executions
