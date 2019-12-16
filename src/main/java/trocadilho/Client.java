@@ -32,7 +32,7 @@ public class Client {
     public static void main(String[] args) {
         Random random = new Random();
         int port = random.nextInt((7000 + ServerGRPC.getServersQuantity()) - 7000) + 7000;
-        Client client = new Client(LOCALHOST, port);
+        Client client = new Client("172.18.0.22", port);
 
         client.run();
     }
