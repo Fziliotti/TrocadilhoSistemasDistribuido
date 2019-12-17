@@ -9,8 +9,7 @@ import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
 import trocadilho.server.ServerGRPC;
 
-import java.io.File;
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -101,12 +100,39 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         responseObserver.onCompleted();
     }
 
+//    int stringHash(String value) {
+//        return Math.abs(value.hashCode() % serversQuantity);
+//    }
+
     int stringHash(String value) {
-        return Math.abs(value.hashCode() % serversQuantity);
+        try {
+            File file = new File("servers_online.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                String[] line = br.readLine().split(",");
+                List<String> onlinePorts = Arrays.asList(line);
+                onlinePorts.forEach(port1 -> neighborServers.add(Integer.parseInt(port1)));
+                Random random = new Random();
+                int position = random.nextInt(onlinePorts.size());
+                return Integer.parseInt(onlinePorts.get(position));
+            }
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return 7000;
     }
 
+//    private int getRightPort(String name) {
+//        int port = stringHash(name) + this.allServersBasePort;
+//
+//        Optional<Integer> neighbourPort = this.neighborServers.stream().filter(neighbour -> neighbour == port).findFirst();
+//        return neighbourPort.orElseGet(() -> neighborServers.get(0));
+//    }
+
     private int getRightPort(String name) {
-        int port = stringHash(name) + this.allServersBasePort;
+        int port = stringHash(name);
 
         Optional<Integer> neighbourPort = this.neighborServers.stream().filter(neighbour -> neighbour == port).findFirst();
         return neighbourPort.orElseGet(() -> neighborServers.get(0));

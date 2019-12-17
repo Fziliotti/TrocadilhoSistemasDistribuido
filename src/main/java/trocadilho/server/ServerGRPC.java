@@ -31,6 +31,7 @@ public class ServerGRPC {
         List<Address> addresses = new LinkedList<>();
         getPorts().forEach(port1 -> addresses.add(new Address("localhost", port1)));
 
+        addPortIntoOnlineServers(port);
         CopycatServer.Builder builder = CopycatServer.builder(addresses.get(myId))
                 .withStateMachine(TrocadilhosStateMachine::new)
                 .withTransport(NettyTransport.builder()
@@ -48,16 +49,15 @@ public class ServerGRPC {
             server.join(addresses).join();
         }
 
+
 //        Server grpcServer = ServerBuilder.forPort(port)
 //                .addService(new TrocadilhoServiceImpl(port - getBasePort()))
 //                .build();
 //
 //        System.out.println("Starting grpcServer...");
 //        grpcServer.start();
-//        addPortIntoOnlineServers(port);
 //        System.out.println("Server started on port " + (port));
 //        grpcServer.awaitTermination();
-//        removePortFromOnlineServers(port);
 
     }
 
