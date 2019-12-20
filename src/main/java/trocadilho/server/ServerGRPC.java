@@ -15,7 +15,6 @@ public class ServerGRPC {
     public static String SERVERS_QUANTITY = "SERVERS_QUANTITY";
     public static String BASE_PORT = "BASE_PORT";
     public static String INTERVAL_TO_SNAPSHOT = "INTERVAL_TO_SNAPSHOT";
-    public static String INTERVAL_TO_DB = "INTERVAL_TO_DB";
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
@@ -30,6 +29,8 @@ public class ServerGRPC {
                 .build();
 
         System.out.println("Starting server...");
+
+
         server.start();
         addPortIntoOnlineServers(port);
 
@@ -132,7 +133,6 @@ public class ServerGRPC {
             ex.printStackTrace();
         }
     }
-
 
     public static void removePortFromOnlineServers(int port) {
         List<Integer> ports = getPorts();
