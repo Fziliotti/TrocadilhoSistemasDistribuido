@@ -7,11 +7,12 @@ import trocadilho.*;
 import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
-import trocadilho.server.ServerGRPC;
 
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static trocadilho.utils.FileUtils.*;
 
 public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServiceImplBase implements Serializable {
     public static String GREETING_OK = "OK";
@@ -29,9 +30,9 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     int allServersBasePort;
 
     public TrocadilhoServiceImpl(Integer serverId) {
-        this.serversQuantity = ServerGRPC.getServersQuantity();
+        this.serversQuantity = getServersQuantity();
         this.serverId = serverId;
-        this.allServersBasePort = ServerGRPC.getBasePort();
+        this.allServersBasePort = getBasePort();
         this.port = String.valueOf(serverId + allServersBasePort);
         this.neighborServers = doGreeting();
         this.runActualServerState();
@@ -87,7 +88,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     }
 
     private void removeFromOnlineServers(int port) {
-        ServerGRPC.removePortFromOnlineServers(port);
+        removePortFromOnlineServers(port);
     }
 
     @Override

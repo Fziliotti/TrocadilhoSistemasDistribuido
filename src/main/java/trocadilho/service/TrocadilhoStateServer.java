@@ -16,6 +16,7 @@ import java.util.*;
 import static trocadilho.domain.enums.OperationTypeEnum.*;
 import static trocadilho.service.TrocadilhoServiceImpl.LOG;
 import static trocadilho.service.TrocadilhoServiceImpl.SNAPSHOT;
+import static trocadilho.utils.FileUtils.getIntervalToSnapshot;
 
 public class TrocadilhoStateServer {
 
@@ -27,7 +28,7 @@ public class TrocadilhoStateServer {
 
     public void beginStateControl(Integer id) {
         this.id = id;
-        this.intervalToSnapshot = ServerGRPC.getIntervalToSnapshot() * 1000;
+        this.intervalToSnapshot = getIntervalToSnapshot() * 1000;
         this.startSnapshotJob(id);
 
     }

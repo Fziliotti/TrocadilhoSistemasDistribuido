@@ -2,10 +2,6 @@ package trocadilho.server;
 
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import trocadilho.*;
 import trocadilho.command.CreateTrocadilhoCommand;
 import trocadilho.command.DeleteTrocadilhoCommand;
@@ -19,16 +15,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
-import static trocadilho.server.ServerGRPC.getBasePort;
 
 public class TrocadilhosStateMachine extends StateMachine {
 
-    public static String LIST_ALL = "LIST_ALL";
 
-    private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub = null;
-    private Server grpcServer = null;
-    private ManagedChannel channel = null;
-    private int grpcPort;
     private TrocadilhoRepositoryImpl trocadilhoRepository = new TrocadilhoRepositoryImpl();
 
     public String listTrocadilhos(Commit<ListTrocadilhosQuery> commit) throws IOException, InterruptedException {
