@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.Synchronized;
-import trocadilho.ServerGRPC;
+import trocadilho.server.ServerGRPC;
 import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;

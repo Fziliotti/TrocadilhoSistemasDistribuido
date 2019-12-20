@@ -2,7 +2,7 @@
 
 # Execute servers
 executeServers(){
-	mvn exec:java -Dexec.mainClass="trocadilho.ServerGRPC"
+	mvn exec:java -Dexec.mainClass="trocadilho.server.ServerGRPC"
 }
 
 # 10 executions

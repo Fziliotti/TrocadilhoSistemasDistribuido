@@ -3,10 +3,10 @@ package trocadilho.service;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import trocadilho.*;
 import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
+import trocadilho.server.ServerGRPC;
 
 import java.io.File;
 import java.io.Serializable;

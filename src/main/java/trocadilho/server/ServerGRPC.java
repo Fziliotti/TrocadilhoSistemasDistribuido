@@ -1,4 +1,4 @@
-package trocadilho;
+package trocadilho.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;

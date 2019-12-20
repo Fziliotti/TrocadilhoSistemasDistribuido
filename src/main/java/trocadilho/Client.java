@@ -1,7 +1,17 @@
 package trocadilho;
 
+
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.netty.NettyTransport;
+import io.atomix.copycat.client.CopycatClient;
+import trocadilho.command.CreateTrocadilhoCommand;
+import trocadilho.command.DeleteTrocadilhoCommand;
+import trocadilho.command.ListTrocadilhosQuery;
+import trocadilho.command.UpdateTrocadilhoCommand;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import trocadilho.server.ServerGRPC;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -67,11 +77,18 @@ public class Client {
     }
 
     private void listAll() {
-        GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
 
-        // Faz a chamada do RPC definido no arquivo proto
-        APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
-        System.out.println(apiResponse.getMessage());
+        CompletableFuture<String> future = copycatClient.submit(new ListTrocadilhosQuery("123", 1));
+
+        String apiResponse = null;
+
+        try {
+            apiResponse = future.get();
+            System.out.println(apiResponse);
+        } catch (Exception e) {
+            System.out.println("Não foi possivel exibir os trocadilhos.");
+        }
+
     }
 
     private void create() {
@@ -80,33 +97,48 @@ public class Client {
         String username = sc.nextLine();
         System.out.println("Agora pode escrever o trocadilho:");
         String trocadilho = sc.nextLine();
-        TrocadilhoRequest trocadilhoRequest = TrocadilhoRequest.newBuilder().setUsername(username).setTrocadilho(trocadilho).build();
-        APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
-        System.out.println(apiResponse.getMessage());
+        CompletableFuture<String> future = copycatClient.submit(new CreateTrocadilhoCommand(username, trocadilho));
+        String apiResponse = null;
+        try {
+            apiResponse = future.get();
+            System.out.println(apiResponse);
+        } catch (Exception e) {
+            System.out.println("Não foi possivel criar o trocadilho.");
+        }
     }
 
     private void update() {
         Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String username = sc.nextLine();
+        String code = sc.nextLine();
         System.out.println("Agora pode escrever o novo trocadilho:");
         String trocadilho = sc.nextLine();
-        UpdateTrocadilhoRequest updateTrocadilhoRequest = UpdateTrocadilhoRequest.newBuilder().setCode(username).setTrocadilho(trocadilho).build();
-        APIResponse apiResponse = blockingStub.updateTrocadilho(updateTrocadilhoRequest);
-        System.out.println(apiResponse.getMessage());
+        CompletableFuture<String> future = copycatClient.submit(new UpdateTrocadilhoCommand(code, trocadilho));
+        String apiResponse = null;
+        try {
+            apiResponse = future.get();
+            System.out.println(apiResponse);
+        } catch (Exception e) {
+            System.out.println("Não foi possivel atualizar o trocadilho.");
+        }
     }
 
     private void delete() {
+
         Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String username = sc.nextLine();
-        DeleteTrocadilhoRequest deleteTrocadilhoRequest = DeleteTrocadilhoRequest.newBuilder().setCode(username).build();
-        APIResponse apiResponse = blockingStub.deleteTrocadilho(deleteTrocadilhoRequest);
-        System.out.println(apiResponse.getMessage());
+        String code = sc.nextLine();
+        CompletableFuture<String> future = copycatClient.submit(new DeleteTrocadilhoCommand(code));
+        String apiResponse = null;
+        try {
+            apiResponse = future.get();
+            System.out.println(apiResponse);
+        } catch (Exception e) {
+            System.out.println("Não foi possivel deletar o trocadilho.");
+        }
     }
 
     private void quit() {
-        this.channel.shutdown();
         System.out.println("Desconectando...");
         System.out.println("Até a próxima!");
     }

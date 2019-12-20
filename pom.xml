@@ -97,7 +97,7 @@
                     <execution>
                         <id>build-first</id>
                         <configuration>
-                            <mainClass>trocadilho.ServerGRPC</mainClass>
+                            <mainClass>trocadilho.server.ServerGRPC</mainClass>
                             <attachToBuild>true</attachToBuild>
                             <classifier>onejar</classifier>
                             <filename>server.jar</filename>
