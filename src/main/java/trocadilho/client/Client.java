@@ -1,54 +1,60 @@
-package trocadilho;
-
+package trocadilho.client;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.netty.NettyTransport;
 import io.atomix.copycat.client.CopycatClient;
+import trocadilho.*;
 import trocadilho.command.CreateTrocadilhoCommand;
 import trocadilho.command.DeleteTrocadilhoCommand;
 import trocadilho.command.ListTrocadilhosQuery;
 import trocadilho.command.UpdateTrocadilhoCommand;
-
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import trocadilho.server.ServerGRPC;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
-
-import static trocadilho.service.TrocadilhoServiceImpl.LOCALHOST;
+import java.util.concurrent.CompletableFuture;
 
 public class Client {
 
+    public static String LIST_ALL = "LIST_ALL";
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub;
-    private final ManagedChannel channel;
+    private Boolean loggined = false;
+    private CopycatClient copycatClient;
 
-    public Client(String host, int port) {
-        this(ManagedChannelBuilder.forAddress(host, port).usePlaintext().build());
+
+    public Client() {
     }
 
-    private Client(ManagedChannel channel) {
-        this.channel = channel;
-        blockingStub = TrocadilhoServiceGrpc.newBlockingStub(channel);
-    }
 
 
     public static void main(String[] args) {
+
+
         Random random = new Random();
         int port = random.nextInt((7000 + ServerGRPC.getServersQuantity()) - 7000) + 7000;
 
-        Client client = new Client(LOCALHOST, port);
+        Client client = new Client();
+        List<Address> addresses = new LinkedList<>();
+
+        CopycatClient.Builder builder = CopycatClient.builder()
+                .withTransport( NettyTransport.builder()
+                        .withThreads(4)
+                        .build());
+        client.copycatClient = builder.build();
+
+        addresses.add(new Address("localhost", port));
+        CompletableFuture<CopycatClient> future = client.copycatClient.connect(addresses);
+        future.join();
         client.run();
     }
 
-    // Aqui vai listar as opceos pro cliente escolher no console
+
     private void run() {
 
         while (true) {
+
             System.out.println("\n\n--------Bem vindo ao Rei dos Trocadilhos.--------\n" +
                     "1(listar)  - Listar todos os trocadilhos\n" +
                     "2(criar)   - Criar um trocadilho\n" +
@@ -56,7 +62,6 @@ public class Client {
                     "4(deletar) - Deletar um trocadilho\n" +
                     "9(sair)    - Sair\n" +
                     "\nDigite o número ou escreva a opção desejada: ");
-
             Scanner sc = new Scanner(System.in);
             String option = sc.nextLine();
             if (option == null) System.out.println("Opção inválida!");
@@ -77,17 +82,16 @@ public class Client {
     }
 
     private void listAll() {
-
         CompletableFuture<String> future = copycatClient.submit(new ListTrocadilhosQuery("123", 1));
-
         String apiResponse = null;
-
         try {
             apiResponse = future.get();
             System.out.println(apiResponse);
         } catch (Exception e) {
             System.out.println("Não foi possivel exibir os trocadilhos.");
         }
+//        GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
+//        APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
 
     }
 

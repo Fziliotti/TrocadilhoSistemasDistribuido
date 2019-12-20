@@ -109,7 +109,7 @@
                     <execution>
                         <id>build-second</id>
                         <configuration>
-                            <mainClass>trocadilho.Client</mainClass>
+                            <mainClass>trocadilho.client.Client</mainClass>
                             <attachToBuild>true</attachToBuild>
                             <classifier>onejar</classifier>
                             <filename>client.jar</filename>

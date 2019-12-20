@@ -2,7 +2,7 @@
 
 # Execute servers
 executeClients(){
-	mvn exec:java -Dexec.mainClass="trocadilho.Client"
+	mvn exec:java -Dexec.mainClass="trocadilho.client.Client"
 }
 
 # 100 executions
