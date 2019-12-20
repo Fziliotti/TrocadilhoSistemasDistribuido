@@ -79,7 +79,7 @@ public class TrocadilhosStateMachine extends StateMachine {
             startGrpcServer();
             setBlockingStub();
 
-            TrocadilhoRequest trocadilhoRequest = TrocadilhoRequest.newBuilder().setUsername(operation.username).setTrocadilho(operation.content).build();
+            CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setUsername(operation.username).setTrocadilho(operation.content).build();
             APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
             return apiResponse.getMessage();
         } finally {

@@ -11,7 +11,6 @@ import trocadilho.server.ServerGRPC;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServiceImplBase implements Serializable {
     public static String GREETING_OK = "OK";
@@ -100,69 +99,46 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         responseObserver.onCompleted();
     }
 
-//    int stringHash(String value) {
-//        return Math.abs(value.hashCode() % serversQuantity);
-//    }
 
-    int stringHash(String value) {
+    String getClusterIdResponsibleForThisCode(String code) {
+        return String.valueOf(Math.abs(code.hashCode() % serversQuantity));
+    }
+
+    private Integer getRightPort(String code) {
+        List<String> onlineServersByClusterId = new ArrayList<>();
+
+        String responsibleClusterId = getClusterIdResponsibleForThisCode(code);
+
         try {
-            File file = new File("servers_online.txt");
+            File file = new File("constants.txt");
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
             while (br.ready()) {
-                String[] line = br.readLine().split(",");
-                List<String> onlinePorts = Arrays.asList(line);
-                onlinePorts.forEach(port1 -> neighborServers.add(Integer.parseInt(port1)));
-                Random random = new Random();
-                int position = random.nextInt(onlinePorts.size());
-                return Integer.parseInt(onlinePorts.get(position));
+                String[] line = br.readLine().split(":");
+                if (line[1].equals(responsibleClusterId)) {
+                    onlineServersByClusterId.add(line[0]);
+                }
             }
             br.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        return 7000;
+
+        return Integer.parseInt(onlineServersByClusterId.get(new Random().nextInt(onlineServersByClusterId.size())));
     }
 
-//    private int getRightPort(String name) {
-//        int port = stringHash(name) + this.allServersBasePort;
-//
-//        Optional<Integer> neighbourPort = this.neighborServers.stream().filter(neighbour -> neighbour == port).findFirst();
-//        return neighbourPort.orElseGet(() -> neighborServers.get(0));
-//    }
+    private Boolean thisIsTheRightServer(String code) {
+        String responsibleClusterId = getClusterIdResponsibleForThisCode(code);
 
-    private int getRightPort(String name) {
-        int port = stringHash(name);
-
-        Optional<Integer> neighbourPort = this.neighborServers.stream().filter(neighbour -> neighbour == port).findFirst();
-        return neighbourPort.orElseGet(() -> neighborServers.get(0));
-    }
-
-    private Boolean thisIsTheRightServer(String name) {
-        int nameHash = stringHash(name);
-
-        if (nameHash == this.serverId) return true;
-
-        List<Integer> allServers = new ArrayList<>(this.neighborServers);
-        allServers.add(this.serverId + allServersBasePort);
-        Collections.sort(allServers);
-
-        List<Integer> candidateServers = allServers.stream()
-                .filter(server -> server % serversQuantity >= nameHash)
-                .map(server -> server % serversQuantity)
-                .collect(Collectors.toList());
-
-        if (candidateServers.size() == 0) candidateServers.add(allServers.get(0));
-
-        return candidateServers.get(0).equals(this.serverId);
+        return responsibleClusterId == this.clusterId;
     }
 
     @Override
-    public void insertTrocadilho(TrocadilhoRequest request, StreamObserver<APIResponse> responseObserver) {
+    public void insertTrocadilho(CreateTrocadilhoRequest request, StreamObserver<APIResponse> responseObserver) {
         StringBuilder message = new StringBuilder("");
-        if (thisIsTheRightServer(request.getUsername())) {
+        if (thisIsTheRightServer(request.getCode())) {
             try {
-                trocadilhoStateServer.createTrocadilho(request.getUsername(), request.getTrocadilho());
+                trocadilhoStateServer.createTrocadilho(request);
                 message.append("OK - Created new trocadilho!");
                 System.out.println("Created trocadilho for user: " + request.getUsername());
             } catch (Exception e) {
@@ -181,9 +157,9 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     @Override
     public void updateTrocadilho(UpdateTrocadilhoRequest request, StreamObserver<APIResponse> responseObserver) {
         StringBuilder message = new StringBuilder("");
-        if (thisIsTheRightServer(request.getTrocadilho())) {
+        if (thisIsTheRightServer(request.getCode())) {
             try {
-                trocadilhoStateServer.updateTrocadilho(request.getCode(), request.getTrocadilho());
+                trocadilhoStateServer.updateTrocadilho(request);
                 message.append("OK - Trocadilho updated!");
                 System.out.println("Update trocadilho for code: " + request.getCode());
             } catch (Exception e) {
@@ -203,7 +179,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getCode())) {
             try {
-                trocadilhoStateServer.deleteTrocadilho(request.getCode());
+                trocadilhoStateServer.deleteTrocadilho(request);
                 message.append("OK - Trocadilho deleted!");
                 System.out.println("Delete trocadilho for code: " + request.getCode());
             } catch (Exception e) {
@@ -221,7 +197,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     @Override
     public void listTrocadilhos(GetTrocadilhoRequest request, StreamObserver<APIResponse> responseObserver) {
         StringBuilder message = new StringBuilder("");
-        if (thisIsTheRightServer(request.getName())) {
+        if (thisIsTheRightServer(request.getCode())) {
 
             List<Trocadilho> base = trocadilhoStateServer.getTrocadilhos();
             base.forEach(trocadilho -> {
@@ -235,7 +211,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         responseObserver.onCompleted();
     }
 
-    public String insertTrocadilhoFromRightServer(TrocadilhoRequest request) {
+    public String insertTrocadilhoFromRightServer(CreateTrocadilhoRequest request) {
         String name = request.getUsername();
         int port = getRightPort(name);
 
