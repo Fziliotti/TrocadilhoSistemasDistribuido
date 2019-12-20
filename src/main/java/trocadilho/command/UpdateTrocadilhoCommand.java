@@ -4,10 +4,10 @@ import io.atomix.copycat.Command;
 
 public class UpdateTrocadilhoCommand implements Command<String> {
     public String code;
-    public String content;
+    public String ip;
 
-    public UpdateTrocadilhoCommand(String code, String content) {
+    public UpdateTrocadilhoCommand(String code, String ip) {
         this.code = code;
-        this.content = content;
+        this.ip = ip;
     }
 }
