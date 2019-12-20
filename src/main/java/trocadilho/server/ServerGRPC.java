@@ -35,9 +35,9 @@ public class ServerGRPC {
         int clusterId = port / getClusterSize();
         startGrpcServer(port, myId, String.valueOf(clusterId));
         List<Address> addresses = new LinkedList<>();
-        getClusterOnlinePorts(clusterId).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
+        getClusterOnlinePorts(String.valueOf(clusterId)).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
 
-        addPortIntoOnlineServers(port, clusterId);
+        addPortIntoOnlineServers(String.valueOf(port), String.valueOf(clusterId));
         CopycatServer.Builder builder = CopycatServer.builder()
                 .withStateMachine(TrocadilhosStateMachine::new)
                 .withTransport(NettyTransport.builder()
@@ -58,70 +58,7 @@ public class ServerGRPC {
         }
     }
 
-    private static void startGrpcServer(int port, int myId, String clusterId) {
-        new Thread(() -> {
-            Server grpcServer = ServerBuilder.forPort(port)
-                    .addService(new TrocadilhoServiceImpl(port - getBasePort(), clusterId ))
-                    .build();
 
-            System.out.println("Starting grpcServer...");
-            try {
-                grpcServer.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            System.out.println("Server [" + myId + "] started on port " + (port));
-            try {
-                grpcServer.awaitTermination();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
-    public static int getClusterSize() {
-        try {
-            File file = new File("constants.txt");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            while (br.ready()) {
-                String[] line = br.readLine().split("=");
-                if (line[0].equals(CLUSTER_SIZE))
-                    return Integer.parseInt(line[1]);
-            }
-            br.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return 1;
-    }
-
-
-
-
-
-
-    public static List<Integer> getClusterOnlinePorts(int clusterId) {
-        List<Integer> ports = getPorts();
-        try {
-            File file = new File("servers_online.txt");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            while (br.ready()) {
-                String[] line = br.readLine().split(":");
-
-                if (line[1].equals(String.valueOf(clusterId))) {
-                    ports.add(Integer.parseInt(line[0]));
-                }
-            }
-            br.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-
-        return ports;
-
-    }
 
 
 }

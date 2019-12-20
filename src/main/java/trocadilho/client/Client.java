@@ -3,18 +3,17 @@ package trocadilho.client;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import trocadilho.*;
-import trocadilho.server.ServerGRPC;
 
 import java.util.Random;
 import java.util.Scanner;
 
 import static trocadilho.service.TrocadilhoServiceImpl.LOCALHOST;
+import static trocadilho.utils.FileUtils.getServersQuantity;
 
 public class Client {
 
     public static String LIST_ALL = "LIST_ALL";
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub;
-    private Boolean loggined = false;
     private final ManagedChannel channel;
 
     public Client(String host, int port) {
@@ -29,7 +28,7 @@ public class Client {
 
     public static void main(String[] args) {
         Random random = new Random();
-        int port = random.nextInt((7000 + ServerGRPC.getServersQuantity()) - 7000) + 7000;
+        int port = random.nextInt((7000 + getServersQuantity()) - 7000) + 7000;
         Client client = new Client(LOCALHOST, port);
 
         client.run();
@@ -78,7 +77,7 @@ public class Client {
         String username = sc.nextLine();
         System.out.println("Agora pode escrever o trocadilho:");
         String trocadilho = sc.nextLine();
-        TrocadilhoRequest trocadilhoRequest = TrocadilhoRequest.newBuilder().setUsername(username).setTrocadilho(trocadilho).build();
+        CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setUsername(username).setTrocadilho(trocadilho).build();
         APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
         System.out.println(apiResponse.getMessage());
     }
