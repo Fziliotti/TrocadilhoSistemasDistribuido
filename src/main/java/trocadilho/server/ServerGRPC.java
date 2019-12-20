@@ -32,7 +32,7 @@ public class ServerGRPC {
             return;
         }
         int myId = (port - getBasePort()) % getClusterSize();
-        int clusterId = port / getClusterSize();
+        int clusterId = myId / getClusterSize();
         startGrpcServer(port, myId, String.valueOf(clusterId));
         List<Address> addresses = new LinkedList<>();
         getClusterOnlinePorts(String.valueOf(clusterId)).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
