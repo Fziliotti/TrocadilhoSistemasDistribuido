@@ -2,56 +2,53 @@ package trocadilho.server;
 
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
-import trocadilho.*;
+import trocadilho.CreateTrocadilhoRequest;
+import trocadilho.DeleteTrocadilhoRequest;
+import trocadilho.UpdateTrocadilhoRequest;
 import trocadilho.command.CreateTrocadilhoCommand;
 import trocadilho.command.DeleteTrocadilhoCommand;
 import trocadilho.command.ListTrocadilhosQuery;
 import trocadilho.command.UpdateTrocadilhoCommand;
-import trocadilho.service.TrocadilhoServiceImpl;
+import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
+import trocadilho.domain.Trocadilho;
 
 import java.io.IOException;
-import java.util.Random;
+import java.util.List;
 
-import static trocadilho.server.ServerGRPC.getBasePort;
 
 public class TrocadilhosStateMachine extends StateMachine {
 
-    public static String LIST_ALL = "LIST_ALL";
 
-    private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub = null;
-    private Server grpcServer = null;
-    private ManagedChannel channel = null;
-    private int grpcPort;
+    private TrocadilhoRepositoryImpl trocadilhoRepository = new TrocadilhoRepositoryImpl();
 
     public String listTrocadilhos(Commit<ListTrocadilhosQuery> commit) throws IOException, InterruptedException {
         try {
-            ListTrocadilhosQuery operation = commit.operation();
-            generatePort();
-            startGrpcServer();
-            setBlockingStub();
+            StringBuilder message = new StringBuilder("");
+            List<Trocadilho> trocadilhos = trocadilhoRepository.listAll();
 
-            GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
-            APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
-            return apiResponse.getMessage();
+            trocadilhos.forEach(trocadilho -> {
+                message.append("\nId: ").append(trocadilho.getCode()).append(" --Autor -> ").append(trocadilho.getUsername()).append(" --- ").append(trocadilho.getContent());
+            });
+
+            return message.toString();
         } finally {
             commit.close();
         }
     }
 
+
     public String updateTrocadilho(Commit<UpdateTrocadilhoCommand> commit) throws IOException, InterruptedException {
         try {
+            StringBuilder message = new StringBuilder("");
             UpdateTrocadilhoCommand operation = commit.operation();
-            generatePort();
-            startGrpcServer();
-            setBlockingStub();
-
-            UpdateTrocadilhoRequest updateTrocadilhoRequest = UpdateTrocadilhoRequest.newBuilder().setCode(operation.code).setTrocadilho(operation.content).build();
-            APIResponse apiResponse = blockingStub.updateTrocadilho(updateTrocadilhoRequest);
-            return apiResponse.getMessage();
+            trocadilhoRepository.update(
+                    UpdateTrocadilhoRequest.newBuilder()
+                            .setCode(operation.code)
+                            .setTrocadilho(operation.content)
+                            .build()
+            );
+            message.append("OK - Trocadilho "+ operation.code + " updated!");
+            return message.toString();
         } finally {
             commit.close();
         }
@@ -59,14 +56,16 @@ public class TrocadilhosStateMachine extends StateMachine {
 
     public String deleteTrocadilho(Commit<DeleteTrocadilhoCommand> commit) throws IOException, InterruptedException {
         try {
+            StringBuilder message = new StringBuilder("");
             DeleteTrocadilhoCommand operation = commit.operation();
-            generatePort();
-            startGrpcServer();
-            setBlockingStub();
+            trocadilhoRepository.deleteById(
+                    DeleteTrocadilhoRequest.newBuilder()
+                            .setCode(operation.code)
+                            .build()
+            );
+            message.append("OK - Trocadilho "+ operation.code + " deleted!");
 
-            DeleteTrocadilhoRequest deleteTrocadilhoRequest = DeleteTrocadilhoRequest.newBuilder().setCode(operation.code).build();
-            APIResponse apiResponse = blockingStub.deleteTrocadilho(deleteTrocadilhoRequest);
-            return apiResponse.getMessage();
+            return message.toString();
         } finally {
             commit.close();
         }
@@ -74,54 +73,25 @@ public class TrocadilhosStateMachine extends StateMachine {
 
     public String createTrocadilho(Commit<CreateTrocadilhoCommand> commit) throws IOException, InterruptedException {
         try {
+            StringBuilder message = new StringBuilder("");
             CreateTrocadilhoCommand operation = commit.operation();
-            generatePort();
-            startGrpcServer();
-            setBlockingStub();
+            trocadilhoRepository.create(
+                    CreateTrocadilhoRequest.newBuilder()
+                            .setCode(operation.code)
+                            .setUsername(operation.username)
+                            .setTrocadilho(operation.content)
+                            .build()
+            );
+            message.append("OK - Trocadilho created!");
 
-            CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setUsername(operation.username).setTrocadilho(operation.content).build();
-            APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
-            return apiResponse.getMessage();
+            return message.toString();
         } finally {
             commit.close();
         }
     }
 
-    private void setBlockingStub() {
-        if (blockingStub == null) {
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
-            blockingStub = TrocadilhoServiceGrpc.newBlockingStub(channel);
-        }
-    }
 
-    private void startGrpcServer() {
 
-        new Thread(() -> {
-            if (grpcServer == null) {
-                grpcServer = ServerBuilder.forPort(grpcPort)
-                        .addService(new TrocadilhoServiceImpl(grpcPort))
-                        .build();
-                System.out.println("Starting grpcServer...");
-                try {
-                    grpcServer.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                ServerGRPC.addPortIntoOnlineServers(grpcPort);
-                System.out.println("Server started on port " + (grpcPort));
-                try {
-                    grpcServer.awaitTermination();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                ServerGRPC.removePortFromOnlineServers(grpcPort);
-            }
-        }).start();
-    }
 
-    private void generatePort() {
-        Random random = new Random();
-        this.grpcPort = random.nextInt((40000) - 10000) + 10000;
-    }
 
 }

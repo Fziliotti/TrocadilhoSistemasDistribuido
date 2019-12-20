@@ -4,37 +4,30 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import trocadilho.*;
-import trocadilho.db.trocadilho.TrocadilhoRepository;
-import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
-import trocadilho.server.ServerGRPC;
 
 import java.io.*;
 import java.util.*;
 
+import static trocadilho.utils.FileUtils.*;
+
 public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServiceImplBase implements Serializable {
-    public static String GREETING_OK = "OK";
     public static String LOCALHOST = "localhost";
     public static String SNAPSHOT = "snapshot";
     public static String LOG = "log";
 
-    private List<Trocadilho> trocadilhoList = new ArrayList<>();
-    private TrocadilhoRepository trocadilhoRepository = new TrocadilhoRepositoryImpl();
     public TrocadilhoStateServer trocadilhoStateServer = new TrocadilhoStateServer();
-    private List<Integer> neighborServers;
     private Integer serverId;
     private String port;
     int serversQuantity;
     int allServersBasePort;
 
     public TrocadilhoServiceImpl(Integer serverId) {
-        this.serversQuantity = ServerGRPC.getServersQuantity();
+        this.serversQuantity = getServersQuantity();
         this.serverId = serverId;
-        this.allServersBasePort = ServerGRPC.getBasePort();
+        this.allServersBasePort = getBasePort();
         this.port = String.valueOf(serverId + allServersBasePort);
-        this.neighborServers = doGreeting();
         this.runActualServerState();
-
     }
 
     public void runActualServerState() {
@@ -58,53 +51,20 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
 
     }
 
-    public List<Integer> doGreeting() {
-        List<Integer> neighbourServers = new ArrayList<>();
-        for (int i = 0; i < serversQuantity; i++) {
-            if (i == serverId) continue;
-
-            Integer port = i + allServersBasePort;
-            TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
-
-            try {
-                GreetingRequest greetingRequest = GreetingRequest.newBuilder().setPort(this.port).build();
-                APIResponse apiResponse = stub.doGreeting(greetingRequest);
-                if (apiResponse.getMessage().equals(GREETING_OK)) {
-                    neighbourServers.add(port);
-                }
-            } catch (Exception e) {
-                System.out.println("Cannot reach server with port: " + port);
-                removeFromOnlineServers(port);
-            }
-        }
-        return neighbourServers;
-    }
-
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub getBlockingStubByHostAndPort(String host, Integer port) {
         ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext(true).build();
         return TrocadilhoServiceGrpc.newBlockingStub(channel);
     }
 
     private void removeFromOnlineServers(int port) {
-        ServerGRPC.removePortFromOnlineServers(port);
+        removePortFromOnlineServers(port);
     }
-
-    @Override
-    public void doGreeting(GreetingRequest request, StreamObserver<APIResponse> responseObserver) {
-        System.out.println("Server with port " + request.getPort() + " connecting.");
-        this.neighborServers.add(Integer.parseInt(request.getPort()));
-        System.out.println("Updated neighbours: " + this.neighborServers.toString());
-        APIResponse apiResponse = APIResponse.newBuilder().setMessage(GREETING_OK).build();
-        responseObserver.onNext(apiResponse);
-        responseObserver.onCompleted();
-    }
-
 
     String getClusterIdResponsibleForThisCode(String code) {
         return String.valueOf(Math.abs(code.hashCode() % serversQuantity));
     }
 
-    private Integer getRightPort(String code) {
+    private Integer getTheRightPort(String code) {
         List<String> onlineServersByClusterId = new ArrayList<>();
 
         String responsibleClusterId = getClusterIdResponsibleForThisCode(code);
@@ -213,7 +173,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
 
     public String insertTrocadilhoFromRightServer(CreateTrocadilhoRequest request) {
         String name = request.getUsername();
-        int port = getRightPort(name);
+        int port = getTheRightPort(name);
 
         TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
         System.out.println("Delegating Create Trocadilho to server with port: " + port);
@@ -224,7 +184,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
 
     public String listAllFromRightServer(GetTrocadilhoRequest getTrocadilhoRequest) {
         String name = getTrocadilhoRequest.getName();
-        int port = getRightPort(name);
+        int port = getTheRightPort(name);
 
         TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
         System.out.println("Delegating List Trocadilhos to server with port: " + port);
@@ -235,7 +195,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
 
     public String deleteTrocadilhoByIdFromRightServer(DeleteTrocadilhoRequest request) {
         String name = request.getCode();
-        int port = getRightPort(name);
+        int port = getTheRightPort(name);
 
         TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
         System.out.println("Delegating Delete Trocadilho to server with port: " + port);
@@ -246,7 +206,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
 
     public String updateTrocadilhoByIdFromRightServer(UpdateTrocadilhoRequest request) {
         String name = request.getTrocadilho();
-        int port = getRightPort(name);
+        int port = getTheRightPort(name);
 
         TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub stub = getBlockingStubByHostAndPort(LOCALHOST, port);
         System.out.println("Delegating Update Trocadilho to server with port: " + port);

@@ -12,7 +12,6 @@ import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
 import trocadilho.domain.TrocadilhoDBRepresentation;
 import trocadilho.domain.enums.OperationTypeEnum;
-import trocadilho.server.ServerGRPC;
 
 import java.io.*;
 import java.util.*;
@@ -20,6 +19,7 @@ import java.util.*;
 import static trocadilho.domain.enums.OperationTypeEnum.*;
 import static trocadilho.service.TrocadilhoServiceImpl.LOG;
 import static trocadilho.service.TrocadilhoServiceImpl.SNAPSHOT;
+import static trocadilho.utils.FileUtils.getIntervalToSnapshot;
 
 public class TrocadilhoStateServer {
 
@@ -31,7 +31,7 @@ public class TrocadilhoStateServer {
 
     public void beginStateControl(Integer id) {
         this.id = id;
-        this.intervalToSnapshot = ServerGRPC.getIntervalToSnapshot() * 1000;
+        this.intervalToSnapshot = getIntervalToSnapshot() * 1000;
         this.startSnapshotJob();
 
     }
