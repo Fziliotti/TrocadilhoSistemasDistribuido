@@ -14,9 +14,7 @@ import static trocadilho.service.TrocadilhoServiceImpl.LOCALHOST;
 
 public class Client {
 
-    public static String LIST_ALL = "LIST_ALL";
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub;
-    private Boolean loggined = false;
     private final ManagedChannel channel;
 
     public Client(String host, int port) {
@@ -32,16 +30,15 @@ public class Client {
     public static void main(String[] args) {
         Random random = new Random();
         int port = random.nextInt((7000 + ServerGRPC.getServersQuantity()) - 7000) + 7000;
-        Client client = new Client(LOCALHOST, port);
 
+        Client client = new Client(LOCALHOST, port);
         client.run();
     }
 
-
+    // Aqui vai listar as opceos pro cliente escolher no console
     private void run() {
 
         while (true) {
-
             System.out.println("\n\n--------Bem vindo ao Rei dos Trocadilhos.--------\n" +
                     "1(listar)  - Listar todos os trocadilhos\n" +
                     "2(criar)   - Criar um trocadilho\n" +
@@ -49,6 +46,7 @@ public class Client {
                     "4(deletar) - Deletar um trocadilho\n" +
                     "9(sair)    - Sair\n" +
                     "\nDigite o número ou escreva a opção desejada: ");
+
             Scanner sc = new Scanner(System.in);
             String option = sc.nextLine();
             if (option == null) System.out.println("Opção inválida!");
@@ -70,6 +68,8 @@ public class Client {
 
     private void listAll() {
         GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
+
+        // Faz a chamada do RPC definido no arquivo proto
         APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
         System.out.println(apiResponse.getMessage());
     }

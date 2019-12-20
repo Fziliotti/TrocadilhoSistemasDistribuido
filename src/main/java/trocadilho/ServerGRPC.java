@@ -32,6 +32,7 @@ public class ServerGRPC {
         System.out.println("Starting server...");
         server.start();
         addPortIntoOnlineServers(port);
+
         System.out.println("Server started on port " + (port));
         server.awaitTermination();
         removePortFromOnlineServers(port);
@@ -97,24 +98,6 @@ public class ServerGRPC {
         }
         return 7000;
     }
-
-    public static Integer getIntervalToDb() {
-        try {
-            File file = new File("constants.txt");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            while (br.ready()) {
-                String[] line = br.readLine().split("=");
-                if (line[0].equals(INTERVAL_TO_DB))
-                    return Integer.parseInt(line[1]);
-            }
-            br.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return 7000;
-    }
-
 
     private static int getAvailablePort() {
         List<Integer> ports = getPorts();
