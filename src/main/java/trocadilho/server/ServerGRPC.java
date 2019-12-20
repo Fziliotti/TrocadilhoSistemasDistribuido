@@ -3,7 +3,6 @@ package trocadilho.server;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.netty.NettyTransport;
 import io.atomix.copycat.server.CopycatServer;
-import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.grpc.Server;
@@ -16,6 +15,7 @@ import java.util.stream.Collectors;
 
 public class ServerGRPC {
     public static String SERVERS_QUANTITY = "SERVERS_QUANTITY";
+    public static String CLUSTER_SIZE = "CLUSTER_SIZE";
     public static String BASE_PORT = "BASE_PORT";
     public static String INTERVAL_TO_SNAPSHOT = "INTERVAL_TO_SNAPSHOT";
     public static String INTERVAL_TO_DB = "INTERVAL_TO_DB";
@@ -27,12 +27,14 @@ public class ServerGRPC {
             System.out.println("Todos os servidores já estão funcionando.");
             return;
         }
-        int myId = port - getBasePort();
+        int myId = (port - getBasePort()) % getClusterSize();
+        int clusterId = port / getClusterSize();
+        startGrpcServer(port, myId, String.valueOf(clusterId));
         List<Address> addresses = new LinkedList<>();
-        getPorts().forEach(port1 -> addresses.add(new Address("localhost", port1)));
+        getClusterOnlinePorts(clusterId).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
 
-        addPortIntoOnlineServers(port);
-        CopycatServer.Builder builder = CopycatServer.builder(addresses.get(myId))
+        addPortIntoOnlineServers(port, clusterId);
+        CopycatServer.Builder builder = CopycatServer.builder()
                 .withStateMachine(TrocadilhosStateMachine::new)
                 .withTransport(NettyTransport.builder()
                         .withThreads(4)
@@ -43,22 +45,51 @@ public class ServerGRPC {
                         .build());
         CopycatServer server = builder.build();
         if (myId == 0) {
+            System.out.println("Starting Atomix server [" + myId + "] on port " + port);
             server.bootstrap().join();
 
         } else {
+            System.out.println("Starting Atomix server [" + myId + "] on port " + port);
             server.join(addresses).join();
         }
+    }
 
+    private static void startGrpcServer(int port, int myId, String clusterId) {
+        new Thread(() -> {
+            Server grpcServer = ServerBuilder.forPort(port)
+                    .addService(new TrocadilhoServiceImpl(port - getBasePort(), clusterId ))
+                    .build();
 
-//        Server grpcServer = ServerBuilder.forPort(port)
-//                .addService(new TrocadilhoServiceImpl(port - getBasePort()))
-//                .build();
-//
-//        System.out.println("Starting grpcServer...");
-//        grpcServer.start();
-//        System.out.println("Server started on port " + (port));
-//        grpcServer.awaitTermination();
+            System.out.println("Starting grpcServer...");
+            try {
+                grpcServer.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Server [" + myId + "] started on port " + (port));
+            try {
+                grpcServer.awaitTermination();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
+    public static int getClusterSize() {
+        try {
+            File file = new File("constants.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                String[] line = br.readLine().split("=");
+                if (line[0].equals(CLUSTER_SIZE))
+                    return Integer.parseInt(line[1]);
+            }
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return 1;
     }
 
     public static int getServersQuantity() {
@@ -158,19 +189,43 @@ public class ServerGRPC {
         return 7000;
     }
 
-    public static void addPortIntoOnlineServers(int port) {
+    public static void addPortIntoOnlineServers(int port, int clusterId) {
         List<Integer> ports = getPorts();
         try {
             File file = new File("servers_online.txt");
             FileWriter fw = new FileWriter(file, true);
             BufferedWriter bw = new BufferedWriter(fw);
             bw.append(String.valueOf(port));
-            bw.append(',');
+            bw.append(':');
+            bw.append(String.valueOf(clusterId));
+            bw.append('\n');
             bw.close();
 
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public static List<Integer> getClusterOnlinePorts(int clusterId) {
+        List<Integer> ports = getPorts();
+        try {
+            File file = new File("servers_online.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                String[] line = br.readLine().split(":");
+
+                if (line[1].equals(String.valueOf(clusterId))) {
+                    ports.add(Integer.parseInt(line[0]));
+                }
+            }
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        return ports;
+
     }
 
 

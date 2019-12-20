@@ -1,9 +1,16 @@
 package trocadilho.service;
 
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.netty.NettyTransport;
+import io.atomix.copycat.client.CopycatClient;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import trocadilho.*;
+import trocadilho.command.CreateTrocadilhoCommand;
+import trocadilho.command.DeleteTrocadilhoCommand;
+import trocadilho.command.ListTrocadilhosQuery;
+import trocadilho.command.UpdateTrocadilhoCommand;
 import trocadilho.db.trocadilho.TrocadilhoRepository;
 import trocadilho.db.trocadilho.TrocadilhoRepositoryImpl;
 import trocadilho.domain.Trocadilho;
@@ -11,7 +18,10 @@ import trocadilho.server.ServerGRPC;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static trocadilho.server.ServerGRPC.getClusterOnlinePorts;
 
 public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServiceImplBase implements Serializable {
     public static String GREETING_OK = "OK";
@@ -27,15 +37,32 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     private String port;
     int serversQuantity;
     int allServersBasePort;
+    private String clusterId;
+    private CopycatClient atomixClient;
 
-    public TrocadilhoServiceImpl(Integer serverId) {
+    public TrocadilhoServiceImpl(Integer serverId, String clusterId) {
         this.serversQuantity = ServerGRPC.getServersQuantity();
         this.serverId = serverId;
         this.allServersBasePort = ServerGRPC.getBasePort();
         this.port = String.valueOf(serverId + allServersBasePort);
         this.neighborServers = doGreeting();
         this.runActualServerState();
+        this.clusterId = clusterId;
+        this.createAtomixClient();
 
+    }
+
+    private void createAtomixClient() {
+        List<Address> addresses = new LinkedList<>();
+        CopycatClient.Builder builder = CopycatClient.builder()
+                .withTransport(NettyTransport.builder()
+                        .withThreads(4)
+                        .build());
+        this.atomixClient = builder.build();
+        getClusterOnlinePorts(Integer.parseInt(clusterId)).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
+
+        CompletableFuture<CopycatClient> future = this.atomixClient.connect(addresses);
+        future.join();
     }
 
     public void runActualServerState() {
@@ -51,7 +78,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
                 .max(Comparator.naturalOrder());
         if (maxSnapshotId.isPresent()) {
             String snapshotFile = "snapshot/snapshot_" + maxSnapshotId.get().toString() + ".txt";
-            trocadilhoStateServer.beginStateControl(maxSnapshotId.get()+1);
+            trocadilhoStateServer.beginStateControl(maxSnapshotId.get() + 1);
             trocadilhoStateServer.recoverDB(snapshotFile);
         } else {
             trocadilhoStateServer.beginStateControl(1);
@@ -162,14 +189,14 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getUsername())) {
             try {
-                trocadilhoStateServer.createTrocadilho(request.getUsername(), request.getTrocadilho());
-                message.append("OK - Created new trocadilho!");
-                System.out.println("Created trocadilho for user: " + request.getUsername());
+                CompletableFuture<String> submit = this.atomixClient.submit(new CreateTrocadilhoCommand(request.getCode(), request.getUsername(), request.getTrocadilho()));
+                message.append(submit.get());
             } catch (Exception e) {
                 e.printStackTrace();
                 message.append("Sorry! Cannot create this trocadilho!");
             }
         } else {
+
             message.append(this.insertTrocadilhoFromRightServer(request));
         }
         APIResponse apiResponse = APIResponse.newBuilder().setMessage(message.toString()).build();
@@ -183,9 +210,8 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getTrocadilho())) {
             try {
-                trocadilhoStateServer.updateTrocadilho(request.getCode(), request.getTrocadilho());
-                message.append("OK - Trocadilho updated!");
-                System.out.println("Update trocadilho for code: " + request.getCode());
+                CompletableFuture<String> submit = this.atomixClient.submit(new UpdateTrocadilhoCommand(request.getCode(), request.getTrocadilho()));
+                message.append(submit.get());
             } catch (Exception e) {
                 e.printStackTrace();
                 message.append("Sorry! Cannot update this trocadilho!");
@@ -203,9 +229,8 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getCode())) {
             try {
-                trocadilhoStateServer.deleteTrocadilho(request.getCode());
-                message.append("OK - Trocadilho deleted!");
-                System.out.println("Delete trocadilho for code: " + request.getCode());
+                CompletableFuture<String> submit = this.atomixClient.submit(new DeleteTrocadilhoCommand(request.getCode()));
+                message.append(submit.get());
             } catch (Exception e) {
                 e.printStackTrace();
                 message.append("Sorry! Cannot delete this trocadilho!");
@@ -223,10 +248,13 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
         StringBuilder message = new StringBuilder("");
         if (thisIsTheRightServer(request.getName())) {
 
-            List<Trocadilho> base = trocadilhoStateServer.getTrocadilhos();
-            base.forEach(trocadilho -> {
-                message.append("\nId: ").append(trocadilho.getCode()).append(" --Autor -> ").append(trocadilho.getUsername()).append(" --- ").append(trocadilho.getContent());
-            });
+            try {
+                CompletableFuture<String> submit = this.atomixClient.submit(new ListTrocadilhosQuery());
+                message.append(submit.get());
+            } catch (Exception e) {
+                e.printStackTrace();
+                message.append("Sorry! Cannot list trocadilhos!");
+            }
         } else {
             message.append(this.listAllFromRightServer(request));
         }
