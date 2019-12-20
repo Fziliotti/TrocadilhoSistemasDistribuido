@@ -4,14 +4,18 @@ package trocadilho.db.trocadilho;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import trocadilho.CreateTrocadilhoRequest;
+import trocadilho.DeleteTrocadilhoRequest;
+import trocadilho.GetTrocadilhoRequest;
+import trocadilho.UpdateTrocadilhoRequest;
 import trocadilho.domain.Trocadilho;
 import trocadilho.domain.TrocadilhoDBRepresentation;
-import trocadilho.domain.User;
 import trocadilho.exception.NotFoundException;
 
-import java.io.*;
-import java.time.LocalDateTime;
-import java.util.Collections;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +24,7 @@ import java.util.stream.Collectors;
 public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
 
     @Override
-    public void create(String content, String username) throws IOException {
+    public void create(CreateTrocadilhoRequest request) throws IOException {
         File file = new File("src/main/java/trocadilho/db/trocadilho/trocadilhoDB.json");
         FileReader fr = new FileReader(file);
         BufferedReader br = new BufferedReader(fr);
@@ -35,11 +39,21 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
         if (!String.valueOf(json).equals("")) {
             trocadilhoDBRepresentation = mapper.readValue(String.valueOf(json), TrocadilhoDBRepresentation.class);
         }
-        trocadilhoDBRepresentation.getTrocadilhoList().sort(Comparator.comparing(Trocadilho::getCode).reversed());
-        Optional<Trocadilho> lastTrocadilho = trocadilhoDBRepresentation.getTrocadilhoList().stream().findFirst();
-        int code = 1;
-        if (lastTrocadilho.isPresent()) code = lastTrocadilho.get().getCode() + 1;
-        Trocadilho trocadilho = new Trocadilho(code, content, username);
+        Optional<Trocadilho> trocadilhoInDB = trocadilhoDBRepresentation.getTrocadilhoList()
+                .stream()
+                .filter(t -> t.getCode().equals(request.getCode()))
+                .findFirst();
+
+        if (trocadilhoInDB.isPresent()) {
+            System.out.println("Trocadilho já criado com o id: " + request.getCode());
+            return;
+        }
+
+        Trocadilho trocadilho = Trocadilho.builder()
+                .code(request.getCode())
+                .username(request.getUsername())
+                .content(request.getTrocadilho())
+                .build();
         trocadilhoDBRepresentation.getTrocadilhoList().add(trocadilho);
 
         ObjectMapper writeMapper = new ObjectMapper();
@@ -57,7 +71,7 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
     }
 
     @Override
-    public void update(String code, String content) throws IOException {
+    public void update(UpdateTrocadilhoRequest request) throws IOException {
         File file = new File("src/main/java/trocadilho/db/trocadilho/trocadilhoDB.json");
         FileReader fr = new FileReader(file);
         BufferedReader br = new BufferedReader(fr);
@@ -72,10 +86,10 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
         if (!String.valueOf(json).equals("")) {
             trocadilhoDBRepresentation = mapper.readValue(String.valueOf(json), TrocadilhoDBRepresentation.class);
         }
-        Optional<Trocadilho> trocadilho = trocadilhoDBRepresentation.getTrocadilhoList().stream().filter(tr -> tr.getCode().toString().equals(code)).findFirst();
-        List<Trocadilho> newTrocadilhos = trocadilhoDBRepresentation.getTrocadilhoList().stream().filter(tr -> !tr.getCode().toString().equals(code)).collect(Collectors.toList());
+        Optional<Trocadilho> trocadilho = trocadilhoDBRepresentation.getTrocadilhoList().stream().filter(tr -> tr.getCode().equals(request.getCode())).findFirst();
+        List<Trocadilho> newTrocadilhos = trocadilhoDBRepresentation.getTrocadilhoList().stream().filter(tr -> !tr.getCode().equals(request.getCode())).collect(Collectors.toList());
         if (!trocadilho.isPresent()) throw new NotFoundException("Code not found");
-        trocadilho.get().setContent(content);
+        trocadilho.get().setContent(request.getTrocadilho());
         newTrocadilhos.add(trocadilho.get());
         TrocadilhoDBRepresentation newTrocadilhoDBRepresentation = new TrocadilhoDBRepresentation(newTrocadilhos);
         ObjectMapper writeMapper = new ObjectMapper();
@@ -84,7 +98,7 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
     }
 
     @Override
-    public void deleteById(String id) throws IOException {
+    public void deleteById(DeleteTrocadilhoRequest request) throws IOException {
         File file = new File("src/main/java/trocadilho/db/trocadilho/trocadilhoDB.json");
         FileReader fr = new FileReader(file);
         BufferedReader br = new BufferedReader(fr);
@@ -99,7 +113,7 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
         if (!String.valueOf(json).equals("")) {
             trocadilhoDBRepresentation = mapper.readValue(String.valueOf(json), TrocadilhoDBRepresentation.class);
         }
-        List<Trocadilho> newTrocadilhos = trocadilhoDBRepresentation.getTrocadilhoList().stream().filter(tr -> !tr.getCode().toString().equals(id)).collect(Collectors.toList());
+        List<Trocadilho> newTrocadilhos = trocadilhoDBRepresentation.getTrocadilhoList().stream().filter(tr -> !tr.getCode().equals(request.getCode())).collect(Collectors.toList());
         if (newTrocadilhos.size() == trocadilhoDBRepresentation.getTrocadilhoList().size())
             throw new NotFoundException("Code not found");
 
@@ -110,7 +124,7 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
     }
 
     @Override
-    public void findByUser(String username) {
+    public void findByUser(GetTrocadilhoRequest request) {
 
     }
 

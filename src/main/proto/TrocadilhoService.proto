@@ -6,20 +6,19 @@ package trocadilho;
 service TrocadilhoService {
     rpc listTrocadilhos (GetTrocadilhoRequest) returns (APIResponse);
     rpc getTrocadilho (GetTrocadilhoRequest) returns (TrocadilhoResponse);
-    rpc insertTrocadilho (TrocadilhoRequest) returns (APIResponse);
+    rpc insertTrocadilho (CreateTrocadilhoRequest) returns (APIResponse);
     rpc updateTrocadilho (UpdateTrocadilhoRequest) returns (APIResponse);
     rpc deleteTrocadilho (DeleteTrocadilhoRequest) returns (APIResponse);
-    rpc doGreeting (GreetingRequest) returns (APIResponse);
-
 }
 
 service LoginService {
     rpc login (LoginRequest) returns (APIResponse);
 }
 
-message TrocadilhoRequest {
-    string username = 1;
-    string trocadilho = 2;
+message CreateTrocadilhoRequest {
+    string code = 1;
+    string username = 2;
+    string trocadilho = 3;
 }
 
 message UpdateTrocadilhoRequest {
@@ -31,7 +30,8 @@ message DeleteTrocadilhoRequest {
 }
 
 message GetTrocadilhoRequest {
-    string name =1;
+    string code = 1;
+    string name = 2;
 }
 
 message APIResponse {
@@ -48,8 +48,4 @@ message TrocadilhoResponse {
 message LoginRequest {
     string username = 1;
     string password = 2;
-}
-
-message GreetingRequest {
-    string port = 1;
 }
