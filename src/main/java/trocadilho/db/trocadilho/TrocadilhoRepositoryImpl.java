@@ -145,8 +145,8 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
                 .findFirst();
 
         if (!trocadilhoInDB.isPresent()) {
-            System.out.println("Trocadilho já criado com o id: " + request.getCode());
-            throw new NotFoundException("ID já criado!");
+            System.out.println("Trocadilho não encontrado para o id: " + request.getCode());
+            throw new NotFoundException("Trocadilho não encontrado!");
         }
         return trocadilhoInDB.get();
     }
