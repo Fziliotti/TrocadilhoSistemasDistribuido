@@ -1,12 +1,11 @@
 # TrocadilhoSistemasDistribuido
 
-[x] - Nova documentação
-<br>
+
 [x] - Arquivo da Log Structure Merge Tree
 <br>
 [x] - Log + Snapshot
 <br>
-[x] - Testes (talvez criar um arquivo e rodar 100 processos cliente..)
+[x] - Testes
 <br>
 [X] - CHORD
 <br>
