@@ -19,7 +19,7 @@ public class ServerGRPC {
     public static String BASE_PORT = "BASE_PORT";
     public static String INTERVAL_TO_SNAPSHOT = "INTERVAL_TO_SNAPSHOT";
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
 
         int port = getAvailablePort();
         if (port == -1) {
