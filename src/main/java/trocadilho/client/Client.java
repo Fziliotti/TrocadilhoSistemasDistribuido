@@ -1,50 +1,36 @@
 package trocadilho.client;
 
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.netty.NettyTransport;
-import io.atomix.copycat.client.CopycatClient;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import trocadilho.*;
-import trocadilho.command.CreateTrocadilhoCommand;
-import trocadilho.command.DeleteTrocadilhoCommand;
-import trocadilho.command.ListTrocadilhosQuery;
-import trocadilho.command.UpdateTrocadilhoCommand;
-import trocadilho.server.ServerGRPC;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
+
+import static trocadilho.service.TrocadilhoServiceImpl.LOCALHOST;
+import static trocadilho.utils.FileUtils.getServersQuantity;
 
 public class Client {
 
     public static String LIST_ALL = "LIST_ALL";
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub;
-    private Boolean loggined = false;
-    private CopycatClient copycatClient;
+    private final ManagedChannel channel;
 
-
-    public Client() {
+    public Client(String host, int port) {
+        this(ManagedChannelBuilder.forAddress(host, port).usePlaintext().build());
     }
 
+    private Client(ManagedChannel channel) {
+        this.channel = channel;
+        blockingStub = TrocadilhoServiceGrpc.newBlockingStub(channel);
+    }
 
 
     public static void main(String[] args) {
         Random random = new Random();
-        int port = random.nextInt((7000 + ServerGRPC.getServersQuantity()) - 7000) + 7000;
-        Client client = new Client();
+        int port = random.nextInt((7000 + getServersQuantity()) - 7000) + 7000;
+        Client client = new Client(LOCALHOST, port);
 
-        List<Address> addresses = new LinkedList<>();
-
-        CopycatClient.Builder builder = CopycatClient.builder()
-                .withTransport( NettyTransport.builder()
-                        .withThreads(4)
-                        .build());
-        client.copycatClient = builder.build();
-
-        addresses.add(new Address("localhost", port));
-        CompletableFuture<CopycatClient> future = client.copycatClient.connect(addresses);
-        future.join();
         client.run();
     }
 
@@ -80,17 +66,9 @@ public class Client {
     }
 
     private void listAll() {
-        CompletableFuture<String> future = copycatClient.submit(new ListTrocadilhosQuery("123", 1));
-        String apiResponse = null;
-        try {
-            apiResponse = future.get();
-            System.out.println(apiResponse);
-        } catch (Exception e) {
-            System.out.println("Não foi possivel exibir os trocadilhos.");
-        }
-//        GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
-//        APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
-
+        GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
+        APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
+        System.out.println(apiResponse.getMessage());
     }
 
     private void create() {
@@ -99,48 +77,33 @@ public class Client {
         String username = sc.nextLine();
         System.out.println("Agora pode escrever o trocadilho:");
         String trocadilho = sc.nextLine();
-        CompletableFuture<String> future = copycatClient.submit(new CreateTrocadilhoCommand(username, trocadilho));
-        String apiResponse = null;
-        try {
-            apiResponse = future.get();
-            System.out.println(apiResponse);
-        } catch (Exception e) {
-            System.out.println("Não foi possivel criar o trocadilho.");
-        }
+        CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setUsername(username).setTrocadilho(trocadilho).build();
+        APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
+        System.out.println(apiResponse.getMessage());
     }
 
     private void update() {
         Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String code = sc.nextLine();
+        String username = sc.nextLine();
         System.out.println("Agora pode escrever o novo trocadilho:");
         String trocadilho = sc.nextLine();
-        CompletableFuture<String> future = copycatClient.submit(new UpdateTrocadilhoCommand(code, trocadilho));
-        String apiResponse = null;
-        try {
-            apiResponse = future.get();
-            System.out.println(apiResponse);
-        } catch (Exception e) {
-            System.out.println("Não foi possivel atualizar o trocadilho.");
-        }
+        UpdateTrocadilhoRequest updateTrocadilhoRequest = UpdateTrocadilhoRequest.newBuilder().setCode(username).setTrocadilho(trocadilho).build();
+        APIResponse apiResponse = blockingStub.updateTrocadilho(updateTrocadilhoRequest);
+        System.out.println(apiResponse.getMessage());
     }
 
     private void delete() {
-
         Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String code = sc.nextLine();
-        CompletableFuture<String> future = copycatClient.submit(new DeleteTrocadilhoCommand(code));
-        String apiResponse = null;
-        try {
-            apiResponse = future.get();
-            System.out.println(apiResponse);
-        } catch (Exception e) {
-            System.out.println("Não foi possivel deletar o trocadilho.");
-        }
+        String username = sc.nextLine();
+        DeleteTrocadilhoRequest deleteTrocadilhoRequest = DeleteTrocadilhoRequest.newBuilder().setCode(username).build();
+        APIResponse apiResponse = blockingStub.deleteTrocadilho(deleteTrocadilhoRequest);
+        System.out.println(apiResponse.getMessage());
     }
 
     private void quit() {
+        this.channel.shutdown();
         System.out.println("Desconectando...");
         System.out.println("Até a próxima!");
     }

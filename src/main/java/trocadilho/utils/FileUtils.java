@@ -1,5 +1,9 @@
 package trocadilho.utils;
 
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import trocadilho.service.TrocadilhoServiceImpl;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,14 +100,15 @@ public class FileUtils {
         return 7000;
     }
 
-    public static void addPortIntoOnlineServers(int port) {
-        List<Integer> ports = getPorts();
+    public static void addPortIntoOnlineServers(String port, String clusterId) {
         try {
             File file = new File("servers_online.txt");
             FileWriter fw = new FileWriter(file, true);
             BufferedWriter bw = new BufferedWriter(fw);
-            bw.append(String.valueOf(port));
-            bw.append(',');
+            bw.append(port);
+            bw.append(':');
+            bw.append(clusterId);
+            bw.append('\n');
             bw.close();
 
         } catch (IOException ex) {
@@ -112,27 +117,87 @@ public class FileUtils {
     }
 
     public static void removePortFromOnlineServers(int port) {
-        List<Integer> ports = getPorts();
+        try {
+            File file = new File("servers_online.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            List<String> lines = new ArrayList<>();
+            while (br.ready()) {
+                lines.add(br.readLine());
+            }
+            List<String> onlinePorts = lines.stream().map(line -> line.split(":")[0]).collect(Collectors.toList());
+            List<String> newOnlineServers = onlinePorts.stream().filter(onlinePort -> !onlinePort.equals(String.valueOf(port))).collect(Collectors.toList());
+            if (newOnlineServers.size() != onlinePorts.size()) {
+                FileWriter fw = new FileWriter(file);
+                BufferedWriter bw = new BufferedWriter(fw);
+                StringBuilder newOnlineServersString = new StringBuilder(",.");
+                newOnlineServers.forEach(newOnlineServer -> newOnlineServersString.append(newOnlineServer).append(","));
+                newOnlineServersString.deleteCharAt(newOnlineServersString.length() - 1);
+                bw.write(newOnlineServersString.toString());
+            }
+
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    public static void startGrpcServer(int port, int myId, String clusterId) {
+        new Thread(() -> {
+            Server grpcServer = ServerBuilder.forPort(port)
+                    .addService(new TrocadilhoServiceImpl(port - getBasePort(), clusterId ))
+                    .build();
+
+            System.out.println("Starting grpcServer...");
+            try {
+                grpcServer.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Server [" + myId + "] started on port " + (port));
+            try {
+                grpcServer.awaitTermination();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    public static int getClusterSize() {
+        try {
+            File file = new File("constants.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            while (br.ready()) {
+                String[] line = br.readLine().split("=");
+                if (line[0].equals(CLUSTER_SIZE))
+                    return Integer.parseInt(line[1]);
+            }
+            br.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return 1;
+    }
+
+    public static List<Integer> getClusterOnlinePorts(String clusterId) {
+        List<Integer> ports = new ArrayList<>();
         try {
             File file = new File("servers_online.txt");
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
             while (br.ready()) {
-                String[] line = br.readLine().split(",");
-                List<String> onlinePorts = Arrays.asList(line);
-                List<String> newOnlineServers = onlinePorts.stream().filter(onlinePort -> !onlinePort.equals(String.valueOf(port))).collect(Collectors.toList());
-                if (newOnlineServers.size() != onlinePorts.size()) {
-                    FileWriter fw = new FileWriter(file);
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    StringBuilder newOnlineServersString = new StringBuilder(",.");
-                    newOnlineServers.forEach(newOnlineServer -> newOnlineServersString.append(newOnlineServer).append(","));
-                    newOnlineServersString.deleteCharAt(newOnlineServersString.length() - 1);
-                    bw.write(newOnlineServersString.toString());
+                String[] line = br.readLine().split(":");
+
+                if (line[1].equals(clusterId)) {
+                    ports.add(Integer.parseInt(line[0]));
                 }
             }
             br.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+
+        return ports;
+
     }
 }
