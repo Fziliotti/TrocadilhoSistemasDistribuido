@@ -1,20 +1,20 @@
 # TrocadilhoSistemasDistribuido
 
-## TO DO:
 [x] - Nova documentação
 <br>
 [x] - Arquivo da Log Structure Merge Tree
 <br>
 [x] - Log + Snapshot
 <br>
-[ ] - Testes (talvez criar um arquivo e rodar 100 processos cliente..)
+[x] - Testes (talvez criar um arquivo e rodar 100 processos cliente..)
 <br>
 [X] - CHORD
 <br>
 [X] - nao deixar hardcoded
 <br>
-[ ] - Docker
-
+[x] - Docker
+<br>
+[x] - Atomix
 
 # INTRODUÇÃO
 
@@ -37,7 +37,8 @@ Será desenvolvido um jogo de trocadilhos reunindo vários jogadores. O jogo ser
 
 1. Abra o projeto em sua IDE;
 2. Importe-o como um projeto Maven e instale as depêndencias;
-3. Depois execute o arquivo trocadilhos.grpc.Server.java referente ao Servidor da aplicação;
+2. Configure em constants.txt a quantidade de clusters e a quantidade de servidores em cada cluster;
+3. Depois execute o arquivo trocadilhos.grpc.Server.java quantas vezes for necessário de acordo com o passo 3;
 4. Após isso, inicie os clientes (Dependendo do número de jogadores no round);
 
 <hr>
