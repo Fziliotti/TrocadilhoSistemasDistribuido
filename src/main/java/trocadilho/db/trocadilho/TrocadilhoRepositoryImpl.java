@@ -46,7 +46,7 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
 
         if (trocadilhoInDB.isPresent()) {
             System.out.println("Trocadilho já criado com o id: " + request.getCode());
-            return;
+            throw new NotFoundException("ID já criado!");
         }
 
         Trocadilho trocadilho = Trocadilho.builder()
@@ -124,8 +124,31 @@ public class TrocadilhoRepositoryImpl implements TrocadilhoRepository {
     }
 
     @Override
-    public void findByUser(GetTrocadilhoRequest request) {
+    public Trocadilho findByCode(GetTrocadilhoRequest request) throws IOException {
+        File file = new File("src/main/java/trocadilho/db/trocadilho/trocadilhoDB.json");
+        FileReader fr = new FileReader(file);
+        BufferedReader br = new BufferedReader(fr);
+        StringBuilder json = new StringBuilder();
+        while (br.ready()) {
+            json.append(br.readLine());
+        }
+        br.close();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        TrocadilhoDBRepresentation trocadilhoDBRepresentation = new TrocadilhoDBRepresentation();
+        if (!String.valueOf(json).equals("")) {
+            trocadilhoDBRepresentation = mapper.readValue(String.valueOf(json), TrocadilhoDBRepresentation.class);
+        }
+        Optional<Trocadilho> trocadilhoInDB = trocadilhoDBRepresentation.getTrocadilhoList()
+                .stream()
+                .filter(t -> t.getCode().equals(request.getCode()))
+                .findFirst();
 
+        if (!trocadilhoInDB.isPresent()) {
+            System.out.println("Trocadilho já criado com o id: " + request.getCode());
+            throw new NotFoundException("ID já criado!");
+        }
+        return trocadilhoInDB.get();
     }
 
     @Override
