@@ -35,7 +35,7 @@ ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 EXPOSE 7000:8000
 WORKDIR /tmp
 
-RUN git clone https://github.com/Fziliotti/TrocadilhoSistemasDistribuido
+RUN git clone -b entrega3 https://github.com/Fziliotti/TrocadilhoSistemasDistribuido
 
 WORKDIR /tmp/TrocadilhoSistemasDistribuido
 RUN git pull
