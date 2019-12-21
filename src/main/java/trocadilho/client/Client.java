@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Scanner;
 
 import static trocadilho.service.TrocadilhoServiceImpl.LOCALHOST;
+import static trocadilho.utils.FileUtils.getClusterSize;
 import static trocadilho.utils.FileUtils.getServersQuantity;
 
 public class Client {
@@ -15,6 +16,7 @@ public class Client {
     public static String LIST_ALL = "LIST_ALL";
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub blockingStub;
     private final ManagedChannel channel;
+    private Scanner sc;
 
     public Client(String host, int port) {
         this(ManagedChannelBuilder.forAddress(host, port).usePlaintext().build());
@@ -28,9 +30,9 @@ public class Client {
 
     public static void main(String[] args) {
         Random random = new Random();
-        int port = random.nextInt((7000 + getServersQuantity()) - 7000) + 7000;
+        int port = random.nextInt((7000 + (getServersQuantity() * getClusterSize())) - 7000) + 7000;
         Client client = new Client(LOCALHOST, port);
-
+        client.sc = new Scanner(System.in);
         client.run();
     }
 
@@ -46,8 +48,7 @@ public class Client {
                     "4(deletar) - Deletar um trocadilho\n" +
                     "9(sair)    - Sair\n" +
                     "\nDigite o número ou escreva a opção desejada: ");
-            Scanner sc = new Scanner(System.in);
-            String option = sc.nextLine();
+            String option = this.sc.next();
             if (option == null) System.out.println("Opção inválida!");
 
             else if (option.equals("1") || option.toLowerCase().equals("buscar")) {
@@ -66,42 +67,38 @@ public class Client {
     }
 
     private void findByCode() {
-        Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String code = sc.nextLine();
+        String code = sc.next();
         GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setCode(code).build();
         TrocadilhoResponse trocadilhoResponse = blockingStub.getTrocadilho(getTrocadilhoRequest);
         System.out.println(trocadilhoResponse.getMessage());
     }
 
     private void create() {
-        Scanner sc = new Scanner(System.in);
         System.out.println("Digite o codigo do trocadilho: ");
-        String code = sc.nextLine();
+        String code = sc.next();
         System.out.println("Digite seu nome ou nickname: ");
-        String username = sc.nextLine();
+        String username = sc.next();
         System.out.println("Agora pode escrever o trocadilho:");
-        String trocadilho = sc.nextLine();
+        String trocadilho = sc.next();
         CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setCode(code).setUsername(username).setTrocadilho(trocadilho).build();
         APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
         System.out.println(apiResponse.getMessage());
     }
 
     private void update() {
-        Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String username = sc.nextLine();
+        String username = sc.next();
         System.out.println("Agora pode escrever o novo trocadilho:");
-        String trocadilho = sc.nextLine();
+        String trocadilho = sc.next();
         UpdateTrocadilhoRequest updateTrocadilhoRequest = UpdateTrocadilhoRequest.newBuilder().setCode(username).setTrocadilho(trocadilho).build();
         APIResponse apiResponse = blockingStub.updateTrocadilho(updateTrocadilhoRequest);
         System.out.println(apiResponse.getMessage());
     }
 
     private void delete() {
-        Scanner sc = new Scanner(System.in);
         System.out.println("Digite o ID do trocadilho: ");
-        String username = sc.nextLine();
+        String username = sc.next();
         DeleteTrocadilhoRequest deleteTrocadilhoRequest = DeleteTrocadilhoRequest.newBuilder().setCode(username).build();
         APIResponse apiResponse = blockingStub.deleteTrocadilho(deleteTrocadilhoRequest);
         System.out.println(apiResponse.getMessage());

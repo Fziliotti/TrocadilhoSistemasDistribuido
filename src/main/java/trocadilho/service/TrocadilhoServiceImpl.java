@@ -158,7 +158,6 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
                 CompletableFuture<String> submit = this.atomixClient.submit(new FindByCodeQuery(request.getCode()));
                 message.append(submit.get());
             } catch (Exception e) {
-                e.printStackTrace();
                 message.append("Sorry! Trocadilho not found!");
             }
         } else {
@@ -267,7 +266,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     }
 
     public String updateTrocadilhoByIdFromRightServer(UpdateTrocadilhoRequest request) {
-        String name = request.getTrocadilho();
+        String name = request.getCode();
         for (int i = 0; i < getClusterSize(); i++) {
             int port = getTheRightPort(name);
             try {

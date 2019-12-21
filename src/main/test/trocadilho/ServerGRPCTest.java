@@ -6,18 +6,29 @@ import org.junit.jupiter.api.Test;
 import trocadilho.client.Client;
 import trocadilho.server.ServerGRPC;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 
 class ServerGRPCTest {
 
-    private InputStream sysInBackup;
+    private final InputStream systemIn = System.in;
+    private final PrintStream systemOut = System.out;
+
+    private ByteArrayInputStream testIn;
+    private ByteArrayOutputStream testOut;
+
     @BeforeEach
     void setup(){
-        sysInBackup = System.in;
+        testOut = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(testOut));
     }
 
     @Test
-    void main() {
+    void success() {
+        System.setIn(systemIn);
+        System.setOut(systemOut);
         ServerGRPC.main(new String[]{});
         ServerGRPC.main(new String[]{});
         ServerGRPC.main(new String[]{});
@@ -27,15 +38,20 @@ class ServerGRPCTest {
         ServerGRPC.main(new String[]{});
         ServerGRPC.main(new String[]{});
         ServerGRPC.main(new String[]{});
+
+        provideInput("criar 1 raimondi lazaroi buscar 1 editar 1 novoTrocadilho deletar 1 buscar 1 sair");
 
         Client.main(new String[]{});
-
-//        ByteArrayInputStream in = new ByteArrayInputStream("Criar");
-//        System.setIn(in);
     }
 
     @AfterEach
     void cleanUp(){
-        System.setIn(sysInBackup);
+        System.setIn(systemIn);
+        System.setOut(systemOut);
+    }
+
+    private void provideInput(String data) {
+        testIn = new ByteArrayInputStream(data.getBytes());
+        System.setIn(testIn);
     }
 }
