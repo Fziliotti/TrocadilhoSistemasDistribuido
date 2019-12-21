@@ -40,7 +40,7 @@ public class Client {
         while (true) {
 
             System.out.println("\n\n--------Bem vindo ao Rei dos Trocadilhos.--------\n" +
-                    "1(listar)  - Listar todos os trocadilhos\n" +
+                    "1(listar)  - Buscar um trocadilho pelo código\n" +
                     "2(criar)   - Criar um trocadilho\n" +
                     "3(editar)  - Editar um trocadilho\n" +
                     "4(deletar) - Deletar um trocadilho\n" +
@@ -50,8 +50,8 @@ public class Client {
             String option = sc.nextLine();
             if (option == null) System.out.println("Opção inválida!");
 
-            else if (option.equals("1") || option.toLowerCase().equals("listar")) {
-                this.listAll();
+            else if (option.equals("1") || option.toLowerCase().equals("buscar")) {
+                this.findByCode();
             } else if (option.equals("2") || option.toLowerCase().equals("criar")) {
                 this.create();
             } else if (option.equals("3") || option.toLowerCase().equals("editar")) {
@@ -65,10 +65,13 @@ public class Client {
         }
     }
 
-    private void listAll() {
-        GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setName(LIST_ALL).build();
-        APIResponse apiResponse = blockingStub.listTrocadilhos(getTrocadilhoRequest);
-        System.out.println(apiResponse.getMessage());
+    private void findByCode() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Digite o ID do trocadilho: ");
+        String code = sc.nextLine();
+        GetTrocadilhoRequest getTrocadilhoRequest = GetTrocadilhoRequest.newBuilder().setCode(code).build();
+        TrocadilhoResponse trocadilhoResponse = blockingStub.getTrocadilho(getTrocadilhoRequest);
+        System.out.println(trocadilhoResponse.getMessage());
     }
 
     private void create() {

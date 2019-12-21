@@ -5,13 +5,8 @@ import io.atomix.catalyst.transport.netty.NettyTransport;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
-import trocadilho.service.TrocadilhoServiceImpl;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,13 +27,13 @@ public class ServerGRPC {
             return;
         }
         int myId = (port - getBasePort()) % getClusterSize();
-        int clusterId = myId / getClusterSize();
+        int clusterId = (port - getBasePort()) / getClusterSize();
         startGrpcServer(port, myId, String.valueOf(clusterId));
         List<Address> addresses = new LinkedList<>();
-        getClusterOnlinePorts(String.valueOf(clusterId)).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
+        getClusterPorts(clusterId).forEach(port1 -> addresses.add(new Address("localhost", port1 + 1000)));
 
         addPortIntoOnlineServers(String.valueOf(port), String.valueOf(clusterId));
-        CopycatServer.Builder builder = CopycatServer.builder()
+        CopycatServer.Builder builder = CopycatServer.builder(addresses.get(myId))
                 .withStateMachine(TrocadilhosStateMachine::new)
                 .withTransport(NettyTransport.builder()
                         .withThreads(4)

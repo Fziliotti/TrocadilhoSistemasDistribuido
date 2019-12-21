@@ -4,9 +4,9 @@ package trocadilho;
 
 
 service TrocadilhoService {
-    rpc listTrocadilhos (GetTrocadilhoRequest) returns (APIResponse);
-    rpc getTrocadilho (GetTrocadilhoRequest) returns (TrocadilhoResponse);
     rpc insertTrocadilho (CreateTrocadilhoRequest) returns (APIResponse);
+    rpc getTrocadilho (GetTrocadilhoRequest) returns (TrocadilhoResponse);
+    rpc listTrocadilhos (GetTrocadilhoRequest) returns (APIResponse);
     rpc updateTrocadilho (UpdateTrocadilhoRequest) returns (APIResponse);
     rpc deleteTrocadilho (DeleteTrocadilhoRequest) returns (APIResponse);
 }
@@ -31,7 +31,6 @@ message DeleteTrocadilhoRequest {
 
 message GetTrocadilhoRequest {
     string code = 1;
-    string name = 2;
 }
 
 message APIResponse {
@@ -41,7 +40,6 @@ message APIResponse {
 
 message TrocadilhoResponse {
     string code = 1;
-    bool underEdition = 2;
     string message = 3;
 }
 

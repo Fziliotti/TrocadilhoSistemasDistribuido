@@ -39,7 +39,7 @@ public class FileUtils {
 
     public static List<Integer> getPorts() {
         List<Integer> ports = new ArrayList<>();
-        int serversQuantity = getServersQuantity();
+        int serversQuantity = getServersQuantity() * getClusterSize();
         for (int i = 0; i < serversQuantity; i++) {
             ports.add(i + getBasePort());
         }
@@ -87,13 +87,14 @@ public class FileUtils {
             File file = new File("servers_online.txt");
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
+            List<String> lines = new ArrayList<>();
             while (br.ready()) {
-                String[] line = br.readLine().split(",");
-                List<String> onlinePorts = Arrays.asList(line);
-                Optional<Integer> port = ports.stream().filter(fport -> !onlinePorts.contains(fport.toString())).findFirst();
-                return port.orElse(-1);
+                lines.add(br.readLine());
             }
             br.close();
+            List<String> onlinePorts = lines.stream().map(line -> line.split(":")[0]).collect(Collectors.toList());
+            Optional<Integer> port = ports.stream().filter(fport -> !onlinePorts.contains(fport.toString())).findFirst();
+            return port.orElse(-1);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -200,4 +201,15 @@ public class FileUtils {
         return ports;
 
     }
+
+    public static List<Integer> getClusterPorts(Integer clusterId) {
+        List<Integer> ports = new ArrayList<>();
+        Integer clusterSize = getClusterSize();
+        Integer basePort = getBasePort();
+        for (Integer i = 0; i < clusterSize; i++) {
+            ports.add(basePort + (clusterId * clusterSize) + i);
+        }
+        return ports;
+    }
+
 }
