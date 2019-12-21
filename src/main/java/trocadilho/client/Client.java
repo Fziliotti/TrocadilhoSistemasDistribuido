@@ -76,11 +76,13 @@ public class Client {
 
     private void create() {
         Scanner sc = new Scanner(System.in);
+        System.out.println("Digite o codigo do trocadilho: ");
+        String code = sc.nextLine();
         System.out.println("Digite seu nome ou nickname: ");
         String username = sc.nextLine();
         System.out.println("Agora pode escrever o trocadilho:");
         String trocadilho = sc.nextLine();
-        CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setUsername(username).setTrocadilho(trocadilho).build();
+        CreateTrocadilhoRequest trocadilhoRequest = CreateTrocadilhoRequest.newBuilder().setCode(code).setUsername(username).setTrocadilho(trocadilho).build();
         APIResponse apiResponse = blockingStub.insertTrocadilho(trocadilhoRequest);
         System.out.println(apiResponse.getMessage());
     }

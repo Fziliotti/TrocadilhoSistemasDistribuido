@@ -44,11 +44,6 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
 
     private void createAtomixClient() {
         if (this.atomixClient == null) {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             List<Address> addresses = new LinkedList<>();
             getClusterPorts(Integer.parseInt(clusterId)).forEach(port1 -> addresses.add(new Address("127.0.0.1", port1 + 1000)));
             CopycatClient.Builder builder = CopycatClient.builder()
@@ -85,7 +80,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     }
 
     private TrocadilhoServiceGrpc.TrocadilhoServiceBlockingStub getBlockingStubByHostAndPort(String host, Integer port) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext(true).build();
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         return TrocadilhoServiceGrpc.newBlockingStub(channel);
     }
 
@@ -164,7 +159,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
                 message.append(submit.get());
             } catch (Exception e) {
                 e.printStackTrace();
-                message.append("Sorry! Cannot create this trocadilho!");
+                message.append("Sorry! Trocadilho not found!");
             }
         } else {
             Integer rightPort = this.getTheRightPort(request.getCode());
@@ -221,7 +216,7 @@ public class TrocadilhoServiceImpl extends TrocadilhoServiceGrpc.TrocadilhoServi
     }
 
     public String insertTrocadilhoFromRightServer(CreateTrocadilhoRequest request) {
-        String name = request.getUsername();
+        String name = request.getCode();
         for (int i = 0; i < getClusterSize(); i++) {
             int port = getTheRightPort(name);
             try {
