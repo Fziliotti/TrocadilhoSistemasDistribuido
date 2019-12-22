@@ -7,13 +7,13 @@
 <br>
 [x] - Log + Snapshot
 <br>
-[ ] - Testes (talvez criar um arquivo e rodar 100 processos cliente..)
+[X] - Testes (talvez criar um arquivo e rodar 100 processos cliente..)
 <br>
 [X] - CHORD
 <br>
 [X] - nao deixar hardcoded
 <br>
-[ ] - Docker
+[X] - Docker
 
 
 # INTRODUÇÃO
